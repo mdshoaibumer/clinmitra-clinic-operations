@@ -1,0 +1,216 @@
+import { useEffect, useState } from 'react'
+import { useAppointmentStore } from '@/store/appointmentStore'
+import { usePatientStore } from '@/store/patientStore'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { appointmentSchema, type AppointmentFormData } from '@/lib/validators'
+import { formatTime, getStatusColor, getTodayDate } from '@/lib/utils'
+import { APPOINTMENT_STATUS_LABELS } from '@/lib/constants'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DatePicker } from '@/components/ui/date-picker'
+import { Plus, ChevronLeft, ChevronRight, X, CheckCircle } from 'lucide-react'
+
+export default function Appointments() {
+  const { appointments, isLoading, fetchByDate, createAppointment, cancelAppointment, completeAppointment } = useAppointmentStore()
+  const { patients, fetchPatients } = usePatientStore()
+  const [selectedDate, setSelectedDate] = useState(getTodayDate())
+  const [showForm, setShowForm] = useState(false)
+  const [formError, setFormError] = useState('')
+
+  const { register, handleSubmit, formState: { errors }, reset, setValue, control } = useForm<AppointmentFormData>({
+    resolver: zodResolver(appointmentSchema),
+    defaultValues: { date: selectedDate },
+  })
+
+  useEffect(() => {
+    fetchByDate(selectedDate)
+  }, [selectedDate, fetchByDate])
+
+  useEffect(() => {
+    if (showForm) fetchPatients()
+  }, [showForm, fetchPatients])
+
+  const changeDate = (days: number) => {
+    const d = new Date(selectedDate)
+    d.setDate(d.getDate() + days)
+    const newDate = d.toISOString().split('T')[0]
+    setSelectedDate(newDate)
+    setValue('date', newDate)
+  }
+
+  const onSubmit = async (data: AppointmentFormData) => {
+    setFormError('')
+    try {
+      await createAppointment({
+        patientId: data.patientId,
+        date: data.date,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        duration: data.duration || 30,
+        notes: data.notes || '',
+        purpose: data.purpose || '',
+      })
+      reset()
+      setShowForm(false)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to create appointment'
+      setFormError(message)
+    }
+  }
+
+  const handleCancel = async (id: string) => {
+    if (confirm('Cancel this appointment?')) {
+      await cancelAppointment(id, 'Cancelled by user')
+    }
+  }
+
+  const handleComplete = async (id: string) => {
+    await completeAppointment(id)
+  }
+
+  const isToday = selectedDate === getTodayDate()
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Appointments</h1>
+        <Button onClick={() => setShowForm(!showForm)}>
+          <Plus className="h-4 w-4 mr-2" /> New Appointment
+        </Button>
+      </div>
+
+      {/* New Appointment Form */}
+      {showForm && (
+        <Card>
+          <CardHeader><CardTitle>Book Appointment</CardTitle></CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {formError && <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">{formError}</div>}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Patient *</Label>
+                  <select
+                    {...register('patientId')}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="">Select patient...</option>
+                    {patients.map(p => <option key={p.id} value={p.id}>{p.name} ({p.phone})</option>)}
+                  </select>
+                  {errors.patientId && <p className="text-sm text-red-500">{errors.patientId.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label>Date *</Label>
+                  <Controller
+                    name="date"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select appointment date"
+                      />
+                    )}
+                  />
+                  {errors.date && <p className="text-sm text-red-500">{errors.date.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label>Start Time *</Label>
+                  <Input type="time" {...register('startTime')} />
+                  {errors.startTime && <p className="text-sm text-red-500">{errors.startTime.message}</p>}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>End Time *</Label>
+                  <Input type="time" {...register('endTime')} />
+                  {errors.endTime && <p className="text-sm text-red-500">{errors.endTime.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label>Purpose</Label>
+                  <Input {...register('purpose')} placeholder="Treatment purpose" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Notes</Label>
+                  <Input {...register('notes')} placeholder="Additional notes" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit">Book</Button>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Date Navigation */}
+      <div className="flex items-center justify-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => changeDate(-1)}>
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+        <div className="text-center">
+          <DatePicker
+            value={selectedDate}
+            onChange={(date) => setSelectedDate(date)}
+            className="text-center"
+          />
+          {isToday && <p className="text-xs text-primary font-medium mt-1">Today</p>}
+        </div>
+        <Button variant="ghost" size="icon" onClick={() => changeDate(1)}>
+          <ChevronRight className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Appointments List */}
+      <Card>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="p-6 text-center text-muted-foreground">Loading...</div>
+          ) : appointments.length === 0 ? (
+            <div className="p-6 text-center text-muted-foreground">No appointments for this date.</div>
+          ) : (
+            <div className="divide-y">
+              {appointments
+                .sort((a, b) => a.startTime.localeCompare(b.startTime))
+                .map((apt) => (
+                <div key={apt.id} className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="text-center min-w-[60px]">
+                      <p className="text-sm font-bold">{formatTime(apt.startTime)}</p>
+                      <p className="text-xs text-muted-foreground">{apt.duration}min</p>
+                    </div>
+                    <div>
+                      <p className="font-medium">{apt.patient?.name || 'Patient'}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {apt.purpose || 'General'}
+                        {apt.notes && ` • ${apt.notes}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(apt.status)}`}>
+                      {APPOINTMENT_STATUS_LABELS[apt.status]}
+                    </span>
+                    {apt.status === 'scheduled' && (
+                      <>
+                        <Button variant="ghost" size="icon" title="Complete" onClick={() => handleComplete(apt.id)}>
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        </Button>
+                        <Button variant="ghost" size="icon" title="Cancel" onClick={() => handleCancel(apt.id)}>
+                          <X className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

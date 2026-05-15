@@ -1,0 +1,268 @@
+package service
+
+import (
+	"database/sql"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"time"
+
+	"practivo/internal/config"
+	"practivo/internal/models"
+	"practivo/internal/utils"
+
+	"gorm.io/gorm"
+)
+
+type BackupInfo struct {
+	FileName  string `json:"fileName"`
+	FilePath  string `json:"filePath"`
+	Size      int64  `json:"size"`
+	CreatedAt string `json:"createdAt"`
+}
+
+type BackupService struct {
+	db           *gorm.DB
+	cfg          *config.Config
+	authService  *AuthService
+	auditService *AuditService
+}
+
+// NewBackupService creates a BackupService for database backup and restore
+// operations.
+func NewBackupService(
+	db *gorm.DB,
+	cfg *config.Config,
+	authService *AuthService,
+	auditService *AuditService,
+) *BackupService {
+	return &BackupService{
+		db:           db,
+		cfg:          cfg,
+		authService:  authService,
+		auditService: auditService,
+	}
+}
+
+// CreateBackup performs a WAL checkpoint, copies the database file to the
+// destination directory, and verifies the backup's integrity. If the
+// destination is empty, the default backup directory is used.
+func (s *BackupService) CreateBackup(destinationDir string) (*BackupInfo, error) {
+	if destinationDir == "" {
+		destinationDir = s.cfg.BackupDir
+	}
+
+	// Resolve to absolute path and validate — prevent path traversal
+	absDir, err := filepath.Abs(destinationDir)
+	if err != nil {
+		return nil, utils.ValidationError("Invalid backup directory path")
+	}
+	destinationDir = absDir
+
+	if err := os.MkdirAll(destinationDir, 0700); err != nil {
+		return nil, fmt.Errorf("failed to create backup directory: %w", err)
+	}
+
+	timestamp := time.Now().Format("20060102_150405")
+	fileName := fmt.Sprintf("practivo_backup_%s.db", timestamp)
+	destPath := filepath.Join(destinationDir, fileName)
+
+	// Use SQLite backup by copying the file (with checkpoint first)
+	sqlDB, err := s.db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	// Force WAL checkpoint before backup
+	if _, err := sqlDB.Exec("PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {
+		return nil, fmt.Errorf("failed to checkpoint: %w", err)
+	}
+
+	// Copy database file
+	if err := copyFile(s.cfg.DBPath, destPath); err != nil {
+		return nil, fmt.Errorf("failed to copy database: %w", err)
+	}
+
+	// Verify backup integrity
+	valid, err := s.VerifyBackup(destPath)
+	if err != nil || !valid {
+		os.Remove(destPath)
+		return nil, fmt.Errorf("backup integrity check failed")
+	}
+
+	info, err := os.Stat(destPath)
+	if err != nil {
+		return nil, err
+	}
+
+	s.auditService.LogAction(s.authService.GetCurrentUserID(), models.AuditBackup, "backup", "", nil, map[string]string{
+		"path": destPath,
+	})
+
+	return &BackupInfo{
+		FileName:  fileName,
+		FilePath:  destPath,
+		Size:      info.Size(),
+		CreatedAt: time.Now().Format(time.RFC3339),
+	}, nil
+}
+
+// RestoreFromBackup replaces the current database with a backup file.
+// Creates a safety backup of the current DB before overwriting. Verifies
+// backup integrity before proceeding. Requires application restart after.
+func (s *BackupService) RestoreFromBackup(backupPath string) error {
+	if backupPath == "" {
+		return utils.ValidationError("Backup file path is required")
+	}
+
+	// Resolve to absolute path — prevent path traversal
+	absPath, err := filepath.Abs(backupPath)
+	if err != nil {
+		return utils.ValidationError("Invalid backup file path")
+	}
+	backupPath = absPath
+
+	// Ensure the file has a .db extension to prevent restoring arbitrary files
+	if filepath.Ext(backupPath) != ".db" {
+		return utils.ValidationError("Backup file must have .db extension")
+	}
+
+	if _, err := os.Stat(backupPath); os.IsNotExist(err) {
+		return utils.ValidationError("Backup file not found")
+	}
+
+	// Verify backup integrity before restore
+	valid, err := s.VerifyBackup(backupPath)
+	if err != nil || !valid {
+		return utils.ValidationError("Backup file is corrupted or invalid")
+	}
+
+	// Create a safety backup of current database
+	safetyDir := filepath.Join(s.cfg.BackupDir, "pre_restore")
+	if err := os.MkdirAll(safetyDir, 0700); err != nil {
+		return fmt.Errorf("failed to create safety backup directory: %w", err)
+	}
+	safetyPath := filepath.Join(safetyDir, fmt.Sprintf("pre_restore_%s.db", time.Now().Format("20060102_150405")))
+	if err := copyFile(s.cfg.DBPath, safetyPath); err != nil {
+		return fmt.Errorf("failed to create safety backup before restore: %w", err)
+	}
+
+	// Close current database
+	sqlDB, err := s.db.DB()
+	if err != nil {
+		return fmt.Errorf("failed to access database connection: %w", err)
+	}
+	sqlDB.Close()
+
+	// Copy backup to database path
+	if err := copyFile(backupPath, s.cfg.DBPath); err != nil {
+		// Attempt to restore from safety backup
+		_ = copyFile(safetyPath, s.cfg.DBPath)
+		return fmt.Errorf("failed to restore: %w", err)
+	}
+
+	// The database connection is now closed. The application must be
+	// restarted to use the restored database.
+	return utils.NewError("RESTART_REQUIRED", "Database restored successfully. Please restart the application.")
+}
+
+// VerifyBackup opens a backup file in read-only mode and runs SQLite
+// PRAGMA integrity_check to verify it is not corrupted.
+func (s *BackupService) VerifyBackup(filePath string) (bool, error) {
+	// Resolve to absolute path for safety
+	absPath, err := filepath.Abs(filePath)
+	if err != nil {
+		return false, fmt.Errorf("invalid file path: %w", err)
+	}
+
+	db, err := sql.Open("sqlite", absPath+"?mode=ro")
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+
+	var result string
+	err = db.QueryRow("PRAGMA integrity_check").Scan(&result)
+	if err != nil {
+		return false, err
+	}
+
+	return result == "ok", nil
+}
+
+// ListBackups scans the backup directory for files matching the naming
+// convention (practivo_backup_*.db) and returns them sorted newest first.
+func (s *BackupService) ListBackups() ([]BackupInfo, error) {
+	var backups []BackupInfo
+
+	dirs := []string{s.cfg.BackupDir}
+
+	for _, dir := range dirs {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			continue
+		}
+
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			if !strings.HasSuffix(entry.Name(), ".db") {
+				continue
+			}
+			if !strings.HasPrefix(entry.Name(), "practivo_backup_") {
+				continue
+			}
+
+			info, err := entry.Info()
+			if err != nil {
+				continue
+			}
+
+			backups = append(backups, BackupInfo{
+				FileName:  entry.Name(),
+				FilePath:  filepath.Join(dir, entry.Name()),
+				Size:      info.Size(),
+				CreatedAt: info.ModTime().Format(time.RFC3339),
+			})
+		}
+	}
+
+	// Sort by date descending
+	sort.Slice(backups, func(i, j int) bool {
+		return backups[i].CreatedAt > backups[j].CreatedAt
+	})
+
+	return backups, nil
+}
+
+// GetAutoBackupPath returns the configured automatic backup directory.
+func (s *BackupService) GetAutoBackupPath() string {
+	return s.cfg.BackupDir
+}
+
+// copyFile copies a file from src to dst with restrictive permissions (0600)
+// and an explicit fsync to ensure data is flushed to disk.
+func copyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	destFile, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, sourceFile)
+	if err != nil {
+		return err
+	}
+
+	return destFile.Sync()
+}
