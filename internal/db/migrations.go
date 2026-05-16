@@ -69,6 +69,13 @@ func migrations() []Migration {
 				return nil
 			},
 		},
+		{
+			Version:     3,
+			Description: "add_doctor_qualification_to_settings",
+			Up: func(tx *gorm.DB) error {
+				return tx.AutoMigrate(&models.ClinicSettings{})
+			},
+		},
 	}
 }
 

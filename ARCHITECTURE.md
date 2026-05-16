@@ -1,10 +1,10 @@
-# Clinmitra Dental — Foundation Architecture Blueprint
+# ClinMitra Dental — Smart Clinic Management Architecture Blueprint
 
 ## SECTION 1 — PRODUCT ARCHITECTURE
 
 ### Overall System Architecture
 
-Clinmitra Dental is a single-process desktop application built on the Wails v2 framework. The Go backend and React frontend run as a unified binary. The backend owns all business logic, data access, and file I/O. The frontend is a presentation layer rendered in a native webview.
+ClinMitra Dental is a single-process desktop application built on the Wails v2 framework. The Go backend and React frontend run as a unified binary. The backend owns all business logic, data access, and file I/O. The frontend is a presentation layer rendered in a native webview.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

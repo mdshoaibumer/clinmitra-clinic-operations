@@ -1,20 +1,20 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "Clinmitra Dental",
-  "outputfilename": "ClinmitraDental",
+  "name": "ClinMitra Dental",
+  "outputfilename": "ClinMitraDental",
   "frontend:install": "npm install",
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
   "author": {
-    "name": "Clinmitra Dental",
+    "name": "ClinMitra Dental",
     "email": "support@clinmitra.in"
   },
   "info": {
-    "companyName": "Clinmitra Dental",
-    "productName": "Clinmitra Dental",
+    "companyName": "ClinMitra Dental",
+    "productName": "ClinMitra Dental",
     "productVersion": "1.0.0",
-    "copyright": "Copyright 2024 Clinmitra Dental",
-    "comments": "Simple, modern dental clinic management software for Indian clinics."
+    "copyright": "Copyright 2024 ClinMitra Dental",
+    "comments": "Simple, modern smart dental clinic management software for Indian clinics."
   }
 }

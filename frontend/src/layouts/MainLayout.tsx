@@ -65,14 +65,16 @@ export default function MainLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden print:h-auto print:overflow-visible">
       {/* Global Search Overlay */}
-      <GlobalSearch />
+      <div className="print:hidden">
+        <GlobalSearch />
+      </div>
 
       {/* Sidebar */}
       <aside
         className={cn(
-          "flex flex-col bg-white border-r transition-all duration-300",
+          "flex flex-col bg-white border-r transition-all duration-300 print:hidden",
           sidebarCollapsed ? "w-16" : "w-64"
         )}
       >
@@ -161,7 +163,7 @@ export default function MainLayout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto bg-gray-50 print:overflow-visible print:bg-white">
+      <main className="flex-1 overflow-auto bg-gray-50 print:overflow-visible print:bg-white print:m-0 print:p-0">
         <div className="p-6 print:p-0">
           <Outlet />
         </div>

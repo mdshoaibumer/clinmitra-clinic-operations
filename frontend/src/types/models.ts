@@ -12,6 +12,7 @@ export interface ClinicSettings {
   id: string
   clinicName: string
   doctorName: string
+  doctorQualification?: string
   address: string
   city: string
   state: string
@@ -27,6 +28,11 @@ export interface ClinicSettings {
   setupComplete: boolean
   autoBackup: boolean
   backupPath: string
+  bankAccount: string
+  accountName: string
+  bankName: string
+  ifscCode: string
+  upiId: string
 }
 
 export interface Patient {

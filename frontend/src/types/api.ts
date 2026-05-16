@@ -57,6 +57,7 @@ export interface MonthlyReport {
 export interface SetupInput {
   clinicName: string
   doctorName: string
+  doctorQualification: string
   address: string
   city: string
   state: string

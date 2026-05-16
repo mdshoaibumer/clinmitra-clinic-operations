@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { Treatment } from '@/types/models'
-import { Download, Upload, Plus, Trash2, Image, X } from 'lucide-react'
+import type { Treatment, BackupInfo } from '@/types/models'
+import { Download, Upload, Plus, Trash2, Image, X, Pencil } from 'lucide-react'
 
 export default function Settings() {
   const { clinic: settings, treatments, isLoading, fetchSettings, fetchTreatments, updateSettings } = useSettingsStore()
@@ -21,6 +21,8 @@ export default function Settings() {
 
   // Clinic form state
   const [clinicName, setClinicName] = useState('')
+  const [doctorName, setDoctorName] = useState('')
+  const [doctorQualification, setDoctorQualification] = useState('')
   const [clinicPhone, setClinicPhone] = useState('')
   const [clinicAddress, setClinicAddress] = useState('')
   const [clinicEmail, setClinicEmail] = useState('')
@@ -28,6 +30,11 @@ export default function Settings() {
   const [gstin, setGstin] = useState('')
   const [gstRate, setGstRate] = useState(0)
   const [logoPreview, setLogoPreview] = useState<string>('')
+  const [bankName, setBankName] = useState('')
+  const [bankAccount, setBankAccount] = useState('')
+  const [accountName, setAccountName] = useState('')
+  const [ifscCode, setIfscCode] = useState('')
+  const [upiId, setUpiId] = useState('')
 
   // Treatment form
   const [showTreatmentForm, setShowTreatmentForm] = useState(false)
@@ -35,6 +42,7 @@ export default function Settings() {
   const [newTreatmentCode, setNewTreatmentCode] = useState('')
   const [newTreatmentPrice, setNewTreatmentPrice] = useState('')
   const [newTreatmentCategory, setNewTreatmentCategory] = useState('')
+  const [editingTreatment, setEditingTreatment] = useState<Treatment | null>(null)
 
   // Password form
   const { register: regPwd, handleSubmit: submitPwd, formState: { errors: pwdErrors }, reset: resetPwd } = useForm<ChangePasswordFormData>({
@@ -42,7 +50,7 @@ export default function Settings() {
   })
 
   // Backup state
-  const [backups, setBackups] = useState<string[]>([])
+  const [backups, setBackups] = useState<BackupInfo[]>([])
 
   useEffect(() => {
     fetchSettings()
@@ -52,6 +60,8 @@ export default function Settings() {
   useEffect(() => {
     if (settings) {
       setClinicName(settings.clinicName || '')
+      setDoctorName(settings.doctorName || '')
+      setDoctorQualification(settings.doctorQualification || '')
       setClinicPhone(settings.phone || '')
       setClinicAddress(settings.address || '')
       setClinicEmail(settings.email || '')
@@ -59,6 +69,11 @@ export default function Settings() {
       setGstin(settings.gstin || '')
       setGstRate(settings.gstRate || 0)
       setLogoPreview(settings.logoBase64 || '')
+      setBankName(settings.bankName || '')
+      setBankAccount(settings.bankAccount || '')
+      setAccountName(settings.accountName || '')
+      setIfscCode(settings.ifscCode || '')
+      setUpiId(settings.upiId || '')
     }
   }, [settings])
 
@@ -80,12 +95,19 @@ export default function Settings() {
       await updateSettings({
         ...settings!,
         clinicName,
+        doctorName,
+        doctorQualification,
         phone: clinicPhone,
         address: clinicAddress,
         email: clinicEmail,
         gstEnabled,
         gstin,
         gstRate,
+        bankName,
+        bankAccount,
+        accountName,
+        ifscCode,
+        upiId,
       })
       setMessage('Settings saved successfully.')
     } catch (err: unknown) {
@@ -141,23 +163,50 @@ export default function Settings() {
 
   const handleAddTreatment = async () => {
     if (!newTreatmentName || !newTreatmentPrice) return
+    setError('')
     try {
-      await window.go.handler.SettingsHandler.CreateTreatment(
-        newTreatmentName,
-        newTreatmentCode,
-        newTreatmentCategory,
-        '',
-        Math.round(parseFloat(newTreatmentPrice) * 100),
-      )
+      const pricePaise = Math.round(parseFloat(newTreatmentPrice) * 100)
+      if (editingTreatment) {
+        await window.go.handler.SettingsHandler.UpdateTreatment(
+          editingTreatment.id,
+          newTreatmentName,
+          newTreatmentCode,
+          newTreatmentCategory,
+          '',
+          pricePaise,
+        )
+        setMessage('Treatment updated successfully.')
+      } else {
+        await window.go.handler.SettingsHandler.CreateTreatment(
+          newTreatmentName,
+          newTreatmentCode,
+          newTreatmentCategory,
+          '',
+          pricePaise,
+        )
+        setMessage('Treatment added to catalog.')
+      }
       setNewTreatmentName('')
       setNewTreatmentCode('')
       setNewTreatmentPrice('')
       setNewTreatmentCategory('')
+      setEditingTreatment(null)
       setShowTreatmentForm(false)
       fetchTreatments()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to add treatment')
+      setError(err instanceof Error ? err.message : 'Failed to save treatment')
     }
+  }
+
+  const handleEditTreatment = (t: Treatment) => {
+    setEditingTreatment(t)
+    setNewTreatmentName(t.name)
+    setNewTreatmentCode(t.code)
+    setNewTreatmentPrice((t.defaultPrice / 100).toString())
+    setNewTreatmentCategory(t.category)
+    setShowTreatmentForm(true)
+    setMessage('')
+    setError('')
   }
 
   const handleDeleteTreatment = async (id: string) => {
@@ -186,8 +235,8 @@ export default function Settings() {
     setError('')
     setMessage('')
     try {
-      const path = await window.go.handler.BackupHandler.CreateBackup()
-      setMessage(`Backup created: ${path}`)
+      const result = await window.go.handler.BackupHandler.CreateBackup("")
+      setMessage(`Backup created: ${result.fileName}`)
       loadBackups()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Backup failed')
@@ -241,6 +290,14 @@ export default function Settings() {
               <div className="space-y-2">
                 <Label>Clinic Name</Label>
                 <Input value={clinicName} onChange={(e) => setClinicName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Doctor Name</Label>
+                <Input value={doctorName} onChange={(e) => setDoctorName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Doctor Qualification</Label>
+                <Input value={doctorQualification} onChange={(e) => setDoctorQualification(e.target.value)} placeholder="e.g. BDS, MDS" />
               </div>
               <div className="space-y-2">
                 <Label>Phone</Label>
@@ -312,7 +369,36 @@ export default function Settings() {
               )}
             </div>
 
-            <Button onClick={handleSaveClinic}>Save Settings</Button>
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="font-medium text-primary">Payment & Bank Details</h3>
+              <p className="text-sm text-muted-foreground italic">These details will be displayed on your invoices for patient payments.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Bank Name</Label>
+                  <Input value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. HDFC Bank" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Account Name</Label>
+                  <Input value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="e.g. Clinmitra Dental Clinic" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Account Number</Label>
+                  <Input value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} placeholder="e.g. 50100123456789" />
+                </div>
+                <div className="space-y-2">
+                  <Label>IFSC Code</Label>
+                  <Input value={ifscCode} onChange={(e) => setIfscCode(e.target.value)} placeholder="e.g. HDFC0001234" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>UPI ID</Label>
+                  <Input value={upiId} onChange={(e) => setUpiId(e.target.value)} placeholder="e.g. clinic@upi" />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <Button onClick={handleSaveClinic} className="w-full md:w-auto">Save All Settings</Button>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -322,13 +408,24 @@ export default function Settings() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Treatment Catalog</CardTitle>
-            <Button size="sm" onClick={() => setShowTreatmentForm(!showTreatmentForm)}>
-              <Plus className="h-4 w-4 mr-1" /> Add
+            <Button size="sm" onClick={() => {
+              if (showTreatmentForm && editingTreatment) {
+                setEditingTreatment(null)
+                setNewTreatmentName('')
+                setNewTreatmentCode('')
+                setNewTreatmentPrice('')
+                setNewTreatmentCategory('')
+              } else {
+                setShowTreatmentForm(!showTreatmentForm)
+              }
+            }}>
+              <Plus className="h-4 w-4 mr-1" /> {showTreatmentForm && editingTreatment ? 'Cancel Edit' : 'Add'}
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             {showTreatmentForm && (
-              <div className="p-4 border rounded-md space-y-3">
+              <div className="p-4 border rounded-md space-y-3 bg-muted/30">
+                <h3 className="text-sm font-medium">{editingTreatment ? 'Edit Treatment' : 'Add New Treatment'}</h3>
                 <div className="grid grid-cols-4 gap-3">
                   <Input placeholder="Name *" value={newTreatmentName} onChange={(e) => setNewTreatmentName(e.target.value)} />
                   <Input placeholder="Code" value={newTreatmentCode} onChange={(e) => setNewTreatmentCode(e.target.value)} />
@@ -336,8 +433,15 @@ export default function Settings() {
                   <Input placeholder="Category" value={newTreatmentCategory} onChange={(e) => setNewTreatmentCategory(e.target.value)} />
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" onClick={handleAddTreatment}>Save</Button>
-                  <Button size="sm" variant="outline" onClick={() => setShowTreatmentForm(false)}>Cancel</Button>
+                  <Button size="sm" onClick={handleAddTreatment}>{editingTreatment ? 'Update' : 'Save'}</Button>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    setShowTreatmentForm(false)
+                    setEditingTreatment(null)
+                    setNewTreatmentName('')
+                    setNewTreatmentCode('')
+                    setNewTreatmentPrice('')
+                    setNewTreatmentCategory('')
+                  }}>Cancel</Button>
                 </div>
               </div>
             )}
@@ -365,7 +469,10 @@ export default function Settings() {
                         <td className="px-3 py-2 text-sm">{t.name}</td>
                         <td className="px-3 py-2 text-sm">{t.category || '-'}</td>
                         <td className="px-3 py-2 text-sm text-right">{formatCurrency(t.defaultPrice)}</td>
-                        <td className="px-3 py-2 text-right">
+                        <td className="px-3 py-2 text-right space-x-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleEditTreatment(t)}>
+                            <Pencil className="h-4 w-4 text-primary" />
+                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => handleDeleteTreatment(t.id)}>
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
@@ -425,9 +532,9 @@ export default function Settings() {
             ) : (
               <div className="space-y-2">
                 {backups.map((backup) => (
-                  <div key={backup} className="flex items-center justify-between p-3 bg-muted rounded-md">
-                    <span className="text-sm font-mono">{backup}</span>
-                    <Button variant="outline" size="sm" onClick={() => handleRestore(backup)}>
+                  <div key={backup.filePath} className="flex items-center justify-between p-3 bg-muted rounded-md">
+                    <span className="text-sm font-mono">{backup.fileName}</span>
+                    <Button variant="outline" size="sm" onClick={() => handleRestore(backup.filePath)}>
                       <Upload className="h-3 w-3 mr-1" /> Restore
                     </Button>
                   </div>

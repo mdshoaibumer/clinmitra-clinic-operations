@@ -8,6 +8,7 @@ export const loginSchema = z.object({
 export const setupSchema = z.object({
   clinicName: z.string().min(2, 'Clinic name is required'),
   doctorName: z.string().min(2, 'Doctor name is required'),
+  doctorQualification: z.string().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),

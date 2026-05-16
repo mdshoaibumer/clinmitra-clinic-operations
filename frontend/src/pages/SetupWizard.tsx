@@ -43,6 +43,7 @@ export default function SetupWizard() {
       await completeSetup({
         clinicName: data.clinicName,
         doctorName: data.doctorName,
+        doctorQualification: data.doctorQualification || '',
         address: data.address || '',
         city: data.city || '',
         state: data.state || '',
@@ -88,6 +89,10 @@ export default function SetupWizard() {
                 <Label htmlFor="doctorName">Doctor Name *</Label>
                 <Input id="doctorName" {...register('doctorName')} placeholder="e.g., Dr. Sharma" />
                 {errors.doctorName && <p className="text-sm text-red-500">{errors.doctorName.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="doctorQualification">Doctor Qualification (Optional)</Label>
+                <Input id="doctorQualification" {...register('doctorQualification')} placeholder="e.g., BDS, MDS, Dental Surgeon" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone *</Label>

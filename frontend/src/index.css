@@ -38,35 +38,59 @@
 }
 
 @media print {
-  .no-print {
-    display: none !important;
+  /* Force background colors to print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
-  .print-only {
-    display: block !important;
-  }
-  /* Hide sidebar, header, and non-print elements during printing */
-  aside {
-    display: none !important;
-  }
-  main {
+
+  /* Global Print Reset */
+  html, body {
     margin: 0 !important;
     padding: 0 !important;
+    height: auto !important;
     overflow: visible !important;
+    background: white !important;
   }
-  /* Hide all screen content, show only print view */
-  .space-y-6 > *:not(.print\\:block) {
+
+  /* Utility classes */
+  .print\:hidden {
     display: none !important;
   }
-  .hidden.print\\:block {
+  
+  .print\:block {
     display: block !important;
   }
-  body {
-    background: white !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+
+  .hidden.print\:block {
+    display: block !important;
   }
+
+  /* Sidebar and Navigation */
+  aside, nav, header, footer:not(.print\:block), button:not(.print\:block) {
+    display: none !important;
+  }
+
+  /* Container adjustments */
+  main, #root {
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
   @page {
-    margin: 10mm;
+    margin: 0;
     size: A4;
+  }
+
+  body {
+    margin: 0 !important;
+  }
+
+  /* Specific fix for InvoicePrintView to have content margins since @page margin is 0 */
+  .print-container {
+    padding: 1cm !important;
   }
 }

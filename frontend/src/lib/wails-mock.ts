@@ -339,3 +339,5 @@ if (typeof window !== 'undefined') {
   (w.go as Record<string, unknown>).handler = handlers;
   console.log('Wails Mock Layer Initialized');
 }
+
+export {}

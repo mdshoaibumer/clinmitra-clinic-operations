@@ -10,20 +10,21 @@ import (
 )
 
 type SetupInput struct {
-	ClinicName    string `json:"clinicName"`
-	DoctorName    string `json:"doctorName"`
-	Address       string `json:"address"`
-	City          string `json:"city"`
-	State         string `json:"state"`
-	Pincode       string `json:"pincode"`
-	Phone         string `json:"phone"`
-	Email         string `json:"email"`
-	GSTIN         string `json:"gstin"`
-	GSTEnabled    bool   `json:"gstEnabled"`
-	InvoicePrefix string `json:"invoicePrefix"`
-	AdminUsername string `json:"adminUsername"`
-	AdminPassword string `json:"adminPassword"`
-	AdminFullName string `json:"adminFullName"`
+	ClinicName         string `json:"clinicName"`
+	DoctorName         string `json:"doctorName"`
+	DoctorQualification string `json:"doctorQualification"`
+	Address            string `json:"address"`
+	City               string `json:"city"`
+	State              string `json:"state"`
+	Pincode            string `json:"pincode"`
+	Phone              string `json:"phone"`
+	Email              string `json:"email"`
+	GSTIN              string `json:"gstin"`
+	GSTEnabled         bool   `json:"gstEnabled"`
+	InvoicePrefix      string `json:"invoicePrefix"`
+	AdminUsername      string `json:"adminUsername"`
+	AdminPassword      string `json:"adminPassword"`
+	AdminFullName      string `json:"adminFullName"`
 }
 
 type SettingsService struct {
@@ -91,22 +92,23 @@ func (s *SettingsService) CompleteSetup(input SetupInput) error {
 	}
 
 	settings := &models.ClinicSettings{
-		ID:            uuid.New().String(),
-		ClinicName:    input.ClinicName,
-		DoctorName:    input.DoctorName,
-		Address:       input.Address,
-		City:          input.City,
-		State:         input.State,
-		Pincode:       input.Pincode,
-		Phone:         input.Phone,
-		Email:         input.Email,
-		GSTIN:         input.GSTIN,
-		GSTEnabled:    input.GSTEnabled,
-		GSTRate:       18,
-		InvoicePrefix: prefix,
-		SetupComplete: true,
-		AutoBackup:    true,
-		BackupPath:    s.cfg.BackupDir,
+		ID:                 uuid.New().String(),
+		ClinicName:         input.ClinicName,
+		DoctorName:         input.DoctorName,
+		DoctorQualification: input.DoctorQualification,
+		Address:            input.Address,
+		City:               input.City,
+		State:              input.State,
+		Pincode:            input.Pincode,
+		Phone:              input.Phone,
+		Email:              input.Email,
+		GSTIN:              input.GSTIN,
+		GSTEnabled:         input.GSTEnabled,
+		GSTRate:            18,
+		InvoicePrefix:      prefix,
+		SetupComplete:      true,
+		AutoBackup:         true,
+		BackupPath:         s.cfg.BackupDir,
 	}
 
 	return s.clinicRepo.Upsert(settings)
