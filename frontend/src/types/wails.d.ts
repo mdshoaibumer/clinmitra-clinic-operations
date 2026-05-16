@@ -1,5 +1,5 @@
-import type { AuthResponse, PatientListResponse, InvoiceListResponse, CreatePatientInput, CreateAppointmentInput, CreateInvoiceInput, RecordPaymentInput, DashboardStats, SetupInput } from './api'
-import type { Patient, PatientTreatment, Appointment, Invoice, Payment, Treatment, ClinicSettings } from './models'
+import type { AuthResponse, PatientListResponse, InvoiceListResponse, CreatePatientInput, CreateAppointmentInput, CreateInvoiceInput, RecordPaymentInput, DashboardStats, DailyReport, MonthlyReport, SetupInput } from './api'
+import type { Patient, PatientTreatment, Appointment, Invoice, Payment, Treatment, ClinicSettings, BackupInfo } from './models'
 
 export {}
 
@@ -45,14 +45,16 @@ declare global {
         }
         DashboardHandler: {
           GetDashboardStats(): Promise<DashboardStats>
-          GetDailyReport(date: string): Promise<unknown>
-          GetMonthlyReport(month: string): Promise<unknown>
+          GetDailyReport(date: string): Promise<DailyReport>
+          GetMonthlyReport(year: number, month: number): Promise<MonthlyReport>
         }
         SettingsHandler: {
           IsSetupComplete(): Promise<boolean>
           CompleteSetup(input: SetupInput): Promise<void>
           GetClinicSettings(): Promise<ClinicSettings>
           UpdateClinicSettings(settings: ClinicSettings): Promise<void>
+          UploadLogo(base64Data: string): Promise<void>
+          RemoveLogo(): Promise<void>
           ListTreatments(): Promise<Treatment[]>
           ListAllTreatments(): Promise<Treatment[]>
           CreateTreatment(name: string, code: string, category: string, description: string, defaultPrice: number): Promise<Treatment>
@@ -60,9 +62,11 @@ declare global {
           DeleteTreatment(id: string): Promise<void>
         }
         BackupHandler: {
-          CreateBackup(): Promise<string>
-          RestoreFromBackup(filename: string): Promise<void>
-          ListBackups(): Promise<string[]>
+          CreateBackup(destinationDir: string): Promise<BackupInfo>
+          RestoreFromBackup(backupPath: string): Promise<void>
+          VerifyBackup(filePath: string): Promise<boolean>
+          ListBackups(): Promise<BackupInfo[]>
+          GetAutoBackupPath(): Promise<string>
         }
       }
     }

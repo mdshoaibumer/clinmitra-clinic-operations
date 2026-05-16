@@ -35,23 +35,23 @@ export interface DashboardStats {
 
 export interface DailyReport {
   date: string
-  totalCollection: number
+  totalCollection: number // paise
   payments: PaymentSummary[]
 }
 
 export interface PaymentSummary {
   invoiceNumber: string
   patientName: string
-  amount: number
+  amount: number // paise
   method: string
 }
 
 export interface MonthlyReport {
   year: number
   month: number
-  totalRevenue: number
-  totalInvoiced: number
-  totalOutstanding: number
+  totalRevenue: number // paise
+  totalInvoiced: number // paise
+  totalOutstanding: number // paise
 }
 
 export interface SetupInput {

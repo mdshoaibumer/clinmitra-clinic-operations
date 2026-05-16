@@ -44,4 +44,29 @@
   .print-only {
     display: block !important;
   }
+  /* Hide sidebar, header, and non-print elements during printing */
+  aside {
+    display: none !important;
+  }
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  /* Hide all screen content, show only print view */
+  .space-y-6 > *:not(.print\\:block) {
+    display: none !important;
+  }
+  .hidden.print\\:block {
+    display: block !important;
+  }
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  @page {
+    margin: 10mm;
+    size: A4;
+  }
 }

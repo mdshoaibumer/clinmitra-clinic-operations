@@ -23,6 +23,7 @@ export interface ClinicSettings {
   gstRate: number
   invoicePrefix: string
   logoPath: string
+  logoBase64: string
   setupComplete: boolean
   autoBackup: boolean
   backupPath: string

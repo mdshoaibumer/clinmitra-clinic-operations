@@ -1,8 +1,12 @@
+import { useEffect, useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useUIStore } from '@/store/uiStore'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Kbd } from '@/components/ui/kbd'
+import { useKeyboardShortcuts } from '@/lib/useKeyboardShortcuts'
+import GlobalSearch from '@/components/GlobalSearch'
 import {
   LayoutDashboard,
   Users,
@@ -13,21 +17,47 @@ import {
   LogOut,
   Menu,
   ChevronLeft,
+  Search,
 } from 'lucide-react'
 
+interface NavBadges {
+  appointments: number
+  outstanding: number
+}
+
 const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/patients', label: 'Patients', icon: Users },
-  { path: '/billing', label: 'Billing', icon: Receipt },
-  { path: '/appointments', label: 'Appointments', icon: Calendar },
-  { path: '/reports', label: 'Reports', icon: BarChart3 },
-  { path: '/settings', label: 'Settings', icon: Settings },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, badgeKey: null },
+  { path: '/patients', label: 'Patients', icon: Users, badgeKey: null },
+  { path: '/billing', label: 'Billing', icon: Receipt, badgeKey: 'outstanding' as const },
+  { path: '/appointments', label: 'Appointments', icon: Calendar, badgeKey: 'appointments' as const },
+  { path: '/reports', label: 'Reports', icon: BarChart3, badgeKey: null },
+  { path: '/settings', label: 'Settings', icon: Settings, badgeKey: null },
 ]
 
 export default function MainLayout() {
   const { user, logout } = useAuthStore()
   const { sidebarCollapsed, toggleSidebar } = useUIStore()
   const navigate = useNavigate()
+  const [badges, setBadges] = useState<NavBadges>({ appointments: 0, outstanding: 0 })
+
+  useKeyboardShortcuts()
+
+  // Fetch badge counts
+  useEffect(() => {
+    async function loadBadges() {
+      try {
+        const stats = await window.go.handler.DashboardHandler.GetDashboardStats()
+        setBadges({
+          appointments: stats?.todayAppointments || 0,
+          outstanding: stats?.totalOutstanding > 0 ? 1 : 0, // just show dot indicator
+        })
+      } catch { /* ignore */ }
+    }
+    loadBadges()
+    // Refresh every 60 seconds
+    const interval = setInterval(loadBadges, 60000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleLogout = async () => {
     await logout()
@@ -36,6 +66,9 @@ export default function MainLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden">
+      {/* Global Search Overlay */}
+      <GlobalSearch />
+
       {/* Sidebar */}
       <aside
         className={cn(
@@ -53,15 +86,32 @@ export default function MainLayout() {
           </Button>
         </div>
 
+        {/* Quick Search Trigger */}
+        {!sidebarCollapsed && (
+          <div className="px-3 pt-3">
+            <button
+              onClick={() => {
+                const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true })
+                window.dispatchEvent(event)
+              }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground border rounded-md hover:bg-accent transition-colors"
+            >
+              <Search className="h-3.5 w-3.5" />
+              <span className="flex-1 text-left">Search...</span>
+              <Kbd>Ctrl+K</Kbd>
+            </button>
+          </div>
+        )}
+
         {/* Navigation */}
-        <nav className="flex-1 p-2 space-y-1">
+        <nav className="flex-1 p-2 space-y-1 mt-1">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors relative",
                   isActive
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
@@ -70,7 +120,22 @@ export default function MainLayout() {
               }
             >
               <item.icon className="h-5 w-5 flex-shrink-0" />
-              {!sidebarCollapsed && <span>{item.label}</span>}
+              {!sidebarCollapsed && <span className="flex-1">{item.label}</span>}
+              {/* Badge */}
+              {item.badgeKey === 'appointments' && badges.appointments > 0 && (
+                <span className={cn(
+                  "bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center",
+                  sidebarCollapsed ? "absolute top-0 right-0 h-4 w-4" : "h-5 min-w-[20px] px-1"
+                )}>
+                  {badges.appointments}
+                </span>
+              )}
+              {item.badgeKey === 'outstanding' && badges.outstanding > 0 && (
+                <span className={cn(
+                  "bg-red-500 rounded-full",
+                  sidebarCollapsed ? "absolute top-1 right-1 h-2 w-2" : "h-2 w-2"
+                )} />
+              )}
             </NavLink>
           ))}
         </nav>
@@ -96,8 +161,8 @@ export default function MainLayout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto bg-gray-50">
-        <div className="p-6">
+      <main className="flex-1 overflow-auto bg-gray-50 print:overflow-visible print:bg-white">
+        <div className="p-6 print:p-0">
           <Outlet />
         </div>
       </main>
