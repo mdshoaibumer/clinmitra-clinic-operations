@@ -46,7 +46,7 @@ export default function MainLayout() {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           {!sidebarCollapsed && (
-            <h1 className="text-xl font-bold text-primary">Practivo</h1>
+            <h1 className="text-xl font-bold text-primary">Clinmitra Dental</h1>
           )}
           <Button variant="ghost" size="icon" onClick={toggleSidebar}>
             {sidebarCollapsed ? <Menu className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}

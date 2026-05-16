@@ -29,10 +29,10 @@ func NewConfig() (*Config, error) {
 	}
 
 	cfg := &Config{
-		AppName:          "DentFlow",
+		AppName:          "Clinmitra Dental",
 		Version:          "1.0.0",
 		DataDir:          dataDir,
-		DBPath:           filepath.Join(dataDir, "dentflow.db"),
+		DBPath:           filepath.Join(dataDir, "clinmitra.db"),
 		BackupDir:        filepath.Join(dataDir, "backups"),
 		LogDir:           filepath.Join(dataDir, "logs"),
 		MaxLoginAttempts: 5,
@@ -55,7 +55,7 @@ func getDataDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(configDir, "DentFlow"), nil
+	return filepath.Join(configDir, "ClinmitraDental"), nil
 }
 
 // ensureDirectories creates the data, backup, and log directories with

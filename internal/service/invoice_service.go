@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	"practivo/internal/models"
-	"practivo/internal/repository"
-	"practivo/internal/utils"
+	"clinmitra/internal/models"
+	"clinmitra/internal/repository"
+	"clinmitra/internal/utils"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"

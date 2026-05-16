@@ -7,12 +7,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"practivo/internal/auth"
-	"practivo/internal/config"
-	"practivo/internal/db"
-	"practivo/internal/handler"
-	"practivo/internal/repository"
-	"practivo/internal/service"
+	"clinmitra/internal/auth"
+	"clinmitra/internal/config"
+	"clinmitra/internal/db"
+	"clinmitra/internal/handler"
+	"clinmitra/internal/repository"
+	"clinmitra/internal/service"
 
 	"gorm.io/gorm"
 )
@@ -47,7 +47,7 @@ func NewApplication() (*Application, error) {
 	}
 
 	// Initialize structured logging with rotation
-	logPath := filepath.Join(cfg.LogDir, "dentflow.log")
+	logPath := filepath.Join(cfg.LogDir, "clinmitra.log")
 	if err := rotateLogIfNeeded(logPath, 10*1024*1024); err != nil { // 10MB max
 		// Non-fatal: proceed without rotation
 		slog.Warn("log rotation failed", "error", err)

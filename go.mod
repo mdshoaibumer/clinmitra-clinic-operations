@@ -1,4 +1,4 @@
-module practivo
+module clinmitra
 
 go 1.22.0
 

@@ -35,3 +35,7 @@ frontend/wailsjs/
 
 # Copilot local files
 .copilot-bridge.json
+
+# Playwright
+frontend/playwright-report/
+frontend/test-results/

@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"practivo/internal/models"
-	"practivo/internal/service"
+	"clinmitra/internal/models"
+	"clinmitra/internal/service"
 )
 
 type AppointmentHandler struct {

@@ -3,7 +3,7 @@ package repository
 import (
 	"time"
 
-	"practivo/internal/models"
+	"clinmitra/internal/models"
 
 	"gorm.io/gorm"
 )

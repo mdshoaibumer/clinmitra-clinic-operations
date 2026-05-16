@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"practivo/internal/models"
-	"practivo/internal/repository"
+	"clinmitra/internal/models"
+	"clinmitra/internal/repository"
 
 	"github.com/google/uuid"
 )
@@ -50,8 +50,11 @@ func (s *AuditService) LogAction(userID string, action models.AuditAction, entit
 		}
 	}
 
-	// Best effort - don't fail the parent operation
-	_ = s.auditRepo.Create(log)
+	// Best effort - run in background to avoid deadlocking if caller is in a transaction
+	// with MaxOpenConns=1.
+	go func() {
+		_ = s.auditRepo.Create(log)
+	}()
 }
 
 // truncateJSON safely truncates a JSON string to maxLen bytes.

@@ -1,14 +1,14 @@
-# Practivo — Foundation Architecture Blueprint
+# Clinmitra Dental — Foundation Architecture Blueprint
 
 ## SECTION 1 — PRODUCT ARCHITECTURE
 
 ### Overall System Architecture
 
-Practivo is a single-process desktop application built on the Wails v2 framework. The Go backend and React frontend run as a unified binary. The backend owns all business logic, data access, and file I/O. The frontend is a presentation layer rendered in a native webview.
+Clinmitra Dental is a single-process desktop application built on the Wails v2 framework. The Go backend and React frontend run as a unified binary. The backend owns all business logic, data access, and file I/O. The frontend is a presentation layer rendered in a native webview.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Practivo.exe                              │
+│                        Clinmitra Dental.exe                              │
 │                                                                 │
 │  ┌───────────────────────────┐  ┌────────────────────────────┐  │
 │  │       Go Backend          │  │     React Frontend         │  │
@@ -71,7 +71,7 @@ Events flow backend → frontend via Wails runtime events for real-time notifica
 
 ### Local Database Strategy
 
-- Single SQLite file: `%APPDATA%/Practivo/Practivo.db`
+- Single SQLite file: `%APPDATA%/Clinmitra Dental/Clinmitra Dental.db`
 - WAL mode enabled for concurrent read performance
 - Foreign keys enforced at database level
 - All migrations versioned and applied on startup
@@ -122,7 +122,7 @@ Migration path: Local-only → Local + cloud backup → Eventual consistency syn
 ## SECTION 2 — COMPLETE PROJECT STRUCTURE
 
 ```
-Practivo/
+Clinmitra Dental/
 ├── main.go                          # Wails application entry point
 ├── app.go                           # Wails app struct, lifecycle hooks
 ├── wails.json                       # Wails project configuration
@@ -721,7 +721,7 @@ SetAutoBackupPath(path) → error
 
 **Business Logic:**
 - Backup is SQLite's `.backup` API (consistent snapshot, no locking)
-- Backup filename: `Practivo_backup_{YYYYMMDD_HHmmss}.db`
+- Backup filename: `Clinmitra Dental_backup_{YYYYMMDD_HHmmss}.db`
 - Auto-backup keeps last 7 daily backups (configurable)
 - Restore creates a backup of current DB before overwriting (safety net)
 - After restore, application restarts to reinitialize connections
@@ -1020,14 +1020,14 @@ RBAC enforcement at service layer (not handler layer) — every service method c
 ### Local File Storage Strategy
 
 ```
-%APPDATA%/Practivo/
-├── Practivo.db              # Main database
+%APPDATA%/Clinmitra Dental/
+├── Clinmitra Dental.db              # Main database
 ├── backups/                 # Auto-backup location
-│   ├── Practivo_backup_20240115_093000.db
+│   ├── Clinmitra Dental_backup_20240115_093000.db
 │   └── ...
 ├── config.json              # Non-sensitive app config (window size, theme)
 └── logs/                    # Application logs (no PII)
-    └── Practivo_2024-01-15.log
+    └── Clinmitra Dental_2024-01-15.log
 ```
 
 - All paths derived from `os.UserConfigDir()` (cross-platform compatible)
@@ -1062,7 +1062,7 @@ Format: `DF-{YYMM}-{SEQUENCE}`
 
 Examples: `DF-2401-0001`, `DF-2401-0042`, `DF-2402-0001`
 
-- Prefix `DF` = Practivo (configurable in settings for clinic branding)
+- Prefix `DF` = Clinmitra Dental (configurable in settings for clinic branding)
 - `YYMM` = year + month (resets sequence monthly for manageable numbers)
 - Sequence = zero-padded 4-digit sequential within month
 - Stored in `clinic_settings.last_invoice_number` — atomic increment via DB transaction

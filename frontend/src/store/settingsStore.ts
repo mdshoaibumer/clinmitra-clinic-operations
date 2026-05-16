@@ -25,7 +25,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     try {
       const complete = await window.go.handler.SettingsHandler.IsSetupComplete()
       set({ isSetupComplete: complete })
-    } catch {
+    } catch (error) {
+      console.error('Failed to check setup status:', error)
       set({ isSetupComplete: false })
     }
   },

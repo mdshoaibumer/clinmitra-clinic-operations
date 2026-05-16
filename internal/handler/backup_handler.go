@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"practivo/internal/service"
+	"clinmitra/internal/service"
 )
 
 type BackupHandler struct {

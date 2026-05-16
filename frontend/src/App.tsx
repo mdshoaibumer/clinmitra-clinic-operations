@@ -36,8 +36,19 @@ export default function App() {
 
   useEffect(() => {
     async function init() {
-      await checkSetup()
-      await checkSession()
+      // Wait for Wails bindings to be ready if they are not yet available
+      if (!window.go) {
+        let attempts = 0
+        while (!window.go && attempts < 10) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+          attempts++
+        }
+      }
+
+      if (window.go) {
+        await checkSetup()
+        await checkSession()
+      }
       setLoading(false)
     }
     init()
@@ -46,7 +57,7 @@ export default function App() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-lg text-muted-foreground">Loading Practivo...</div>
+        <div className="text-lg text-muted-foreground">Loading Clinmitra...</div>
       </div>
     )
   }

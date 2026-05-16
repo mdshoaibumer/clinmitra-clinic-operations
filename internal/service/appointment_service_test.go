@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"practivo/internal/models"
+	"clinmitra/internal/models"
 )
 
 func TestAppointmentConflictDetection(t *testing.T) {

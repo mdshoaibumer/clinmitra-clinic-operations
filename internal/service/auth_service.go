@@ -5,11 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"practivo/internal/auth"
-	"practivo/internal/config"
-	"practivo/internal/models"
-	"practivo/internal/repository"
-	"practivo/internal/utils"
+	"clinmitra/internal/auth"
+	"clinmitra/internal/config"
+	"clinmitra/internal/models"
+	"clinmitra/internal/repository"
+	"clinmitra/internal/utils"
 
 	"github.com/google/uuid"
 )

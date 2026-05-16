@@ -1,7 +1,7 @@
 package db
 
 import (
-	"practivo/internal/models"
+	"clinmitra/internal/models"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"

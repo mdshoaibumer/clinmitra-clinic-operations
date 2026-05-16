@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"practivo/internal/models"
+	"clinmitra/internal/models"
 )
 
 type Session struct {

@@ -1,10 +1,10 @@
 package service
 
 import (
-	"practivo/internal/config"
-	"practivo/internal/models"
-	"practivo/internal/repository"
-	"practivo/internal/utils"
+	"clinmitra/internal/config"
+	"clinmitra/internal/models"
+	"clinmitra/internal/repository"
+	"clinmitra/internal/utils"
 
 	"github.com/google/uuid"
 )
@@ -138,8 +138,9 @@ func (s *SettingsService) CreateTreatment(name, code, category, description stri
 	if err := utils.ValidateRequired("Name", name); err != nil {
 		return nil, err
 	}
-	if err := utils.ValidateRequired("Code", code); err != nil {
-		return nil, err
+	// Code is optional
+	if code == "" {
+		code = "CUSTOM"
 	}
 	if err := utils.ValidatePositiveAmount("Default price", defaultPrice); err != nil {
 		return nil, err

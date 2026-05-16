@@ -10,7 +10,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 
-	"practivo/internal/app"
+	"clinmitra/internal/app"
 )
 
 //go:embed all:frontend/dist
@@ -27,7 +27,7 @@ func main() {
 	}
 
 	err = wails.Run(&options.App{
-		Title:     "DentFlow - Dental Clinic Management",
+		Title:     "Clinmitra Dental - Dental Clinic Management",
 		Width:     1280,
 		Height:    800,
 		MinWidth:  1024,

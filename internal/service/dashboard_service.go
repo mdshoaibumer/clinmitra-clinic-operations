@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"practivo/internal/repository"
-	"practivo/internal/utils"
+	"clinmitra/internal/repository"
+	"clinmitra/internal/utils"
 )
 
 type DashboardStats struct {

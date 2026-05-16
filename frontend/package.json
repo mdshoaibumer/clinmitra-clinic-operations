@@ -1,5 +1,5 @@
 {
-  "name": "practivo-frontend",
+  "name": "clinmitra-dental-frontend",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -36,6 +36,8 @@
     "zustand": "^4.5.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.8.0",
     "@types/react": "^18.2.56",
     "@types/react-dom": "^18.2.19",
     "@vitejs/plugin-react": "^4.2.1",

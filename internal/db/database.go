@@ -3,19 +3,20 @@ package db
 import (
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"practivo/internal/config"
+	"clinmitra/internal/config"
 )
 
 // NewDatabase opens a SQLite database with WAL mode, foreign keys, and
 // performance pragmas. Runs an integrity check before returning.
-// The database is configured for single-writer access (MaxOpenConns=1).
+// The database is configured for concurrent access with WAL mode.
 func NewDatabase(cfg *config.Config) (*gorm.DB, error) {
-	dsn := fmt.Sprintf("%s?_journal_mode=WAL&_foreign_keys=ON&_busy_timeout=5000", cfg.DBPath)
+	dsn := fmt.Sprintf("%s?_pragma=journal_mode(WAL)&_pragma=foreign_keys(ON)&_pragma=busy_timeout(5000)", cfg.DBPath)
 
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
@@ -29,13 +30,15 @@ func NewDatabase(cfg *config.Config) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to get sql.DB: %w", err)
 	}
 
-	// SQLite supports single writer
-	sqlDB.SetMaxOpenConns(1)
-	sqlDB.SetMaxIdleConns(1)
+	// SQLite with WAL supports multiple readers and one writer
+	sqlDB.SetMaxOpenConns(10)
+	sqlDB.SetMaxIdleConns(5)
+	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	// Enable WAL mode and other pragmas
 	pragmas := []string{
 		"PRAGMA journal_mode=WAL",
+		"PRAGMA busy_timeout=5000",
 		"PRAGMA synchronous=NORMAL",
 		"PRAGMA cache_size=-20000", // 20MB cache
 		"PRAGMA foreign_keys=ON",

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"log/slog"
 
-	"practivo/internal/utils"
+	"clinmitra/internal/utils"
 )
 
 // safeError ensures only AppError types are returned to the frontend.

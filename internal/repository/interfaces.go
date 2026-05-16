@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"practivo/internal/models"
+	"clinmitra/internal/models"
 )
 
 type UserRepository interface {

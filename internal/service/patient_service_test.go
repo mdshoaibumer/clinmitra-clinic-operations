@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"practivo/internal/utils"
+	"clinmitra/internal/utils"
 )
 
 func TestCreatePatient_Validation(t *testing.T) {

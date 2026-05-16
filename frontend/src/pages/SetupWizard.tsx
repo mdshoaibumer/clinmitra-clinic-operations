@@ -17,7 +17,7 @@ export default function SetupWizard() {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { register, handleSubmit, formState: { errors }, trigger, watch, control } = useForm<SetupFormData>({
+  const { register, handleSubmit, formState: { errors }, watch, control, trigger } = useForm<SetupFormData>({
     resolver: zodResolver(setupSchema),
     defaultValues: {
       gstEnabled: false,
@@ -26,12 +26,14 @@ export default function SetupWizard() {
   })
 
   const nextStep = async () => {
-    let fieldsToValidate: (keyof SetupFormData)[] = []
-    if (step === 1) fieldsToValidate = ['clinicName', 'doctorName', 'phone']
-    if (step === 2) fieldsToValidate = ['adminUsername', 'adminPassword', 'adminFullName']
-
-    const valid = await trigger(fieldsToValidate)
-    if (valid) setStep(step + 1)
+    const fieldsToValidate = step === 1 
+      ? ['clinicName', 'doctorName', 'phone'] as const
+      : ['adminFullName', 'adminUsername', 'adminPassword'] as const
+    
+    const isValid = await trigger(fieldsToValidate)
+    if (isValid) {
+      setStep(step + 1)
+    }
   }
 
   const onSubmit = async (data: SetupFormData) => {
@@ -55,8 +57,8 @@ export default function SetupWizard() {
         adminFullName: data.adminFullName,
       })
       navigate('/login')
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Setup failed'
+    } catch (err: any) {
+      const message = err.message || 'Setup failed'
       setError(message)
     } finally {
       setIsSubmitting(false)
@@ -66,7 +68,7 @@ export default function SetupWizard() {
   return (
     <Card className="w-full max-w-lg mx-auto">
       <CardHeader>
-        <CardTitle>Setup Practivo</CardTitle>
+        <CardTitle>Setup Clinmitra Dental</CardTitle>
         <CardDescription>Step {step} of 3 — {step === 1 ? 'Clinic Details' : step === 2 ? 'Admin Account' : 'Confirm'}</CardDescription>
       </CardHeader>
       <CardContent>

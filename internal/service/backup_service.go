@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"practivo/internal/config"
-	"practivo/internal/models"
-	"practivo/internal/utils"
+	"clinmitra/internal/config"
+	"clinmitra/internal/models"
+	"clinmitra/internal/utils"
 
 	"gorm.io/gorm"
 )
@@ -67,7 +67,7 @@ func (s *BackupService) CreateBackup(destinationDir string) (*BackupInfo, error)
 	}
 
 	timestamp := time.Now().Format("20060102_150405")
-	fileName := fmt.Sprintf("practivo_backup_%s.db", timestamp)
+	fileName := fmt.Sprintf("clinmitra_backup_%s.db", timestamp)
 	destPath := filepath.Join(destinationDir, fileName)
 
 	// Use SQLite backup by copying the file (with checkpoint first)
@@ -194,7 +194,7 @@ func (s *BackupService) VerifyBackup(filePath string) (bool, error) {
 }
 
 // ListBackups scans the backup directory for files matching the naming
-// convention (practivo_backup_*.db) and returns them sorted newest first.
+// convention (clinmitra_backup_*.db) and returns them sorted newest first.
 func (s *BackupService) ListBackups() ([]BackupInfo, error) {
 	var backups []BackupInfo
 
@@ -213,7 +213,7 @@ func (s *BackupService) ListBackups() ([]BackupInfo, error) {
 			if !strings.HasSuffix(entry.Name(), ".db") {
 				continue
 			}
-			if !strings.HasPrefix(entry.Name(), "practivo_backup_") {
+			if !strings.HasPrefix(entry.Name(), "clinmitra_backup_") {
 				continue
 			}
 

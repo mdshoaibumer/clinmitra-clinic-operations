@@ -3,8 +3,8 @@ package service
 import (
 	"testing"
 
-	"practivo/internal/models"
-	"practivo/internal/repository"
+	"clinmitra/internal/models"
+	"clinmitra/internal/repository"
 )
 
 // --- Mock Repositories ---
