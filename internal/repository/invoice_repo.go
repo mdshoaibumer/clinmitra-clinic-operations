@@ -28,7 +28,7 @@ func (r *invoiceRepo) FindByID(id string) (*models.Invoice, error) {
 	err := r.db.Preload("Patient").Preload("Items").Preload("Payments").
 		Where("id = ?", id).First(&invoice).Error
 	if err != nil {
-		return nil, err
+		return nil, WrapError(err)
 	}
 	return &invoice, nil
 }

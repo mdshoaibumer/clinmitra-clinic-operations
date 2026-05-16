@@ -25,7 +25,7 @@ func (r *appointmentRepo) FindByID(id string) (*models.Appointment, error) {
 	var appointment models.Appointment
 	err := r.db.Preload("Patient").Where("id = ?", id).First(&appointment).Error
 	if err != nil {
-		return nil, err
+		return nil, WrapError(err)
 	}
 	return &appointment, nil
 }

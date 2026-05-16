@@ -118,7 +118,11 @@ func (s *SettingsService) GetClinicSettings() (*models.ClinicSettings, error) {
 }
 
 // UpdateClinicSettings saves updated clinic settings and logs the change.
+// Requires admin role.
 func (s *SettingsService) UpdateClinicSettings(settings *models.ClinicSettings) error {
+	if err := s.authService.RequireRole(models.RoleAdmin); err != nil {
+		return err
+	}
 	s.auditService.LogAction(s.authService.GetCurrentUserID(), models.AuditUpdate, "clinic_settings", settings.ID, nil, settings)
 	return s.clinicRepo.Upsert(settings)
 }
@@ -134,7 +138,11 @@ func (s *SettingsService) ListAllTreatments() ([]models.Treatment, error) {
 }
 
 // CreateTreatment validates and creates a new treatment/procedure entry.
+// Requires admin or doctor role.
 func (s *SettingsService) CreateTreatment(name, code, category, description string, defaultPrice int64) (*models.Treatment, error) {
+	if err := s.authService.RequireRole(models.RoleAdmin, models.RoleDoctor); err != nil {
+		return nil, err
+	}
 	if err := utils.ValidateRequired("Name", name); err != nil {
 		return nil, err
 	}
@@ -165,7 +173,11 @@ func (s *SettingsService) CreateTreatment(name, code, category, description stri
 }
 
 // UpdateTreatment modifies an existing treatment's details and logs the change.
+// Requires admin or doctor role.
 func (s *SettingsService) UpdateTreatment(id, name, code, category, description string, defaultPrice int64) error {
+	if err := s.authService.RequireRole(models.RoleAdmin, models.RoleDoctor); err != nil {
+		return err
+	}
 	treatment, err := s.treatmentRepo.FindByID(id)
 	if err != nil {
 		return utils.ErrNotFound
@@ -187,7 +199,41 @@ func (s *SettingsService) UpdateTreatment(id, name, code, category, description 
 }
 
 // DeleteTreatment soft-deletes a treatment by marking it inactive.
+// Requires admin role.
 func (s *SettingsService) DeleteTreatment(id string) error {
+	if err := s.authService.RequireRole(models.RoleAdmin); err != nil {
+		return err
+	}
 	s.auditService.LogAction(s.authService.GetCurrentUserID(), models.AuditDelete, "treatment", id, nil, nil)
 	return s.treatmentRepo.Delete(id)
+}
+
+// SaveLogo stores the base64-encoded logo in clinic settings.
+// Requires admin role.
+func (s *SettingsService) SaveLogo(base64Data string) error {
+	if err := s.authService.RequireRole(models.RoleAdmin); err != nil {
+		return err
+	}
+	settings, err := s.clinicRepo.Get()
+	if err != nil {
+		return err
+	}
+	settings.LogoBase64 = base64Data
+	s.auditService.LogAction(s.authService.GetCurrentUserID(), models.AuditUpdate, "clinic_logo", settings.ID, nil, "logo_updated")
+	return s.clinicRepo.Upsert(settings)
+}
+
+// RemoveLogo clears the logo from clinic settings.
+// Requires admin role.
+func (s *SettingsService) RemoveLogo() error {
+	if err := s.authService.RequireRole(models.RoleAdmin); err != nil {
+		return err
+	}
+	settings, err := s.clinicRepo.Get()
+	if err != nil {
+		return err
+	}
+	settings.LogoBase64 = ""
+	s.auditService.LogAction(s.authService.GetCurrentUserID(), models.AuditUpdate, "clinic_logo", settings.ID, nil, "logo_removed")
+	return s.clinicRepo.Upsert(settings)
 }

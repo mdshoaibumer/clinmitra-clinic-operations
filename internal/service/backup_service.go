@@ -50,7 +50,12 @@ func NewBackupService(
 // CreateBackup performs a WAL checkpoint, copies the database file to the
 // destination directory, and verifies the backup's integrity. If the
 // destination is empty, the default backup directory is used.
+// Requires admin role.
 func (s *BackupService) CreateBackup(destinationDir string) (*BackupInfo, error) {
+	if err := s.authService.RequireRole(models.RoleAdmin); err != nil {
+		return nil, err
+	}
+
 	if destinationDir == "" {
 		destinationDir = s.cfg.BackupDir
 	}
@@ -113,7 +118,12 @@ func (s *BackupService) CreateBackup(destinationDir string) (*BackupInfo, error)
 // RestoreFromBackup replaces the current database with a backup file.
 // Creates a safety backup of the current DB before overwriting. Verifies
 // backup integrity before proceeding. Requires application restart after.
+// Requires admin role.
 func (s *BackupService) RestoreFromBackup(backupPath string) error {
+	if err := s.authService.RequireRole(models.RoleAdmin); err != nil {
+		return err
+	}
+
 	if backupPath == "" {
 		return utils.ValidationError("Backup file path is required")
 	}

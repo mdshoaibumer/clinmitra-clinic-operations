@@ -20,13 +20,13 @@ func (r *patientRepo) Create(patient *models.Patient) error {
 	return r.db.Create(patient).Error
 }
 
-// FindByID retrieves a patient by primary key. Returns gorm.ErrRecordNotFound
+// FindByID retrieves a patient by primary key. Returns utils.ErrNotFound
 // if no matching record exists.
 func (r *patientRepo) FindByID(id string) (*models.Patient, error) {
 	var patient models.Patient
 	err := r.db.Where("id = ?", id).First(&patient).Error
 	if err != nil {
-		return nil, err
+		return nil, WrapError(err)
 	}
 	return &patient, nil
 }
@@ -68,12 +68,12 @@ func (r *patientRepo) List(page, pageSize int, search string) ([]models.Patient,
 }
 
 // FindByPhone looks up a patient by exact phone number match.
-// Returns gorm.ErrRecordNotFound if no match.
+// Returns utils.ErrNotFound if no match.
 func (r *patientRepo) FindByPhone(phone string) (*models.Patient, error) {
 	var patient models.Patient
 	err := r.db.Where("phone = ?", phone).First(&patient).Error
 	if err != nil {
-		return nil, err
+		return nil, WrapError(err)
 	}
 	return &patient, nil
 }

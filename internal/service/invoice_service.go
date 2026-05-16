@@ -235,7 +235,7 @@ func (s *InvoiceService) CreateInvoice(input CreateInvoiceInput) (*models.Invoic
 func (s *InvoiceService) GetInvoice(id string) (*models.Invoice, error) {
 	invoice, err := s.invoiceRepo.FindByID(id)
 	if err != nil {
-		return nil, utils.ErrNotFound
+		return nil, err
 	}
 	return invoice, nil
 }
@@ -353,11 +353,15 @@ func (s *InvoiceService) RecordPayment(input RecordPaymentInput) (*models.Paymen
 }
 
 // VoidInvoice marks an invoice as void with a reason. Only unpaid invoices
-// (no recorded payments) can be voided.
+// (no recorded payments) can be voided. Requires admin role.
 func (s *InvoiceService) VoidInvoice(id, reason string) error {
+	if err := s.authService.RequireRole(models.RoleAdmin); err != nil {
+		return err
+	}
+
 	invoice, err := s.invoiceRepo.FindByID(id)
 	if err != nil {
-		return utils.ErrNotFound
+		return err
 	}
 
 	if invoice.Status == models.InvoiceVoid {

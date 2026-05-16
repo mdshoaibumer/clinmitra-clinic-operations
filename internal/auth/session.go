@@ -23,19 +23,23 @@ type SessionManager struct {
 	sessions     map[string]*Session
 	mu           sync.RWMutex
 	sessionHours int
+	maxSessions  int
 }
 
 // NewSessionManager creates a SessionManager that issues sessions lasting
-// the given number of hours. Sessions are stored in-memory.
+// the given number of hours. Sessions are stored in-memory with a cap to
+// prevent unbounded memory growth.
 func NewSessionManager(sessionHours int) *SessionManager {
 	return &SessionManager{
 		sessions:     make(map[string]*Session),
 		sessionHours: sessionHours,
+		maxSessions:  100,
 	}
 }
 
 // CreateSession generates a new cryptographic token, invalidates any
 // existing session for the same user, and stores a new session.
+// Expired sessions are cleaned up if the map exceeds maxSessions.
 func (sm *SessionManager) CreateSession(user *models.User) (*Session, error) {
 	token, err := generateToken()
 	if err != nil {
@@ -49,6 +53,16 @@ func (sm *SessionManager) CreateSession(user *models.User) (*Session, error) {
 	for k, s := range sm.sessions {
 		if s.UserID == user.ID {
 			delete(sm.sessions, k)
+		}
+	}
+
+	// Evict expired sessions if map exceeds capacity
+	if len(sm.sessions) >= sm.maxSessions {
+		now := time.Now()
+		for k, s := range sm.sessions {
+			if now.After(s.ExpiresAt) {
+				delete(sm.sessions, k)
+			}
 		}
 	}
 

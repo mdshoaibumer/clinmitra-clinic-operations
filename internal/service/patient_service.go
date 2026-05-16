@@ -125,7 +125,7 @@ func (s *PatientService) CreatePatient(input CreatePatientInput) (*models.Patien
 func (s *PatientService) UpdatePatient(id string, input CreatePatientInput) (*models.Patient, error) {
 	patient, err := s.patientRepo.FindByID(id)
 	if err != nil {
-		return nil, utils.ErrNotFound
+		return nil, err
 	}
 
 	if err := utils.ValidateRequired("Name", input.Name); err != nil {
@@ -190,7 +190,7 @@ func (s *PatientService) UpdatePatient(id string, input CreatePatientInput) (*mo
 func (s *PatientService) GetPatient(id string) (*models.Patient, error) {
 	patient, err := s.patientRepo.FindByID(id)
 	if err != nil {
-		return nil, utils.ErrNotFound
+		return nil, err
 	}
 	return patient, nil
 }
@@ -222,8 +222,12 @@ func (s *PatientService) ListPatients(page, pageSize int, search string) (*Patie
 }
 
 // DeletePatient soft-deletes a patient by ID. Prevents deletion if the
-// patient has unpaid invoices.
+// patient has unpaid invoices. Requires admin role.
 func (s *PatientService) DeletePatient(id string) error {
+	if err := s.authService.RequireRole(models.RoleAdmin); err != nil {
+		return err
+	}
+
 	// Check for unpaid invoices
 	outstanding, err := s.invoiceRepo.GetOutstandingByPatient(id)
 	if err != nil {

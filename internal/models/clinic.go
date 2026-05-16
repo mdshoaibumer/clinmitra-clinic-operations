@@ -15,6 +15,7 @@ type ClinicSettings struct {
 	GSTRate       int    `gorm:"default:18" json:"gstRate"` // percentage
 	InvoicePrefix string `gorm:"type:text;default:'PV'" json:"invoicePrefix"`
 	LogoPath      string `gorm:"type:text" json:"logoPath"`
+	LogoBase64    string `gorm:"type:text" json:"logoBase64"`
 	SetupComplete bool   `gorm:"default:false" json:"setupComplete"`
 	AutoBackup    bool   `gorm:"default:true" json:"autoBackup"`
 	BackupPath    string `gorm:"type:text" json:"backupPath"`

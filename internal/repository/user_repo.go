@@ -27,7 +27,7 @@ func (r *userRepo) FindByID(id string) (*models.User, error) {
 	var user models.User
 	err := r.db.Where("id = ?", id).First(&user).Error
 	if err != nil {
-		return nil, err
+		return nil, WrapError(err)
 	}
 	return &user, nil
 }
@@ -37,7 +37,7 @@ func (r *userRepo) FindByUsername(username string) (*models.User, error) {
 	var user models.User
 	err := r.db.Where("username = ?", username).First(&user).Error
 	if err != nil {
-		return nil, err
+		return nil, WrapError(err)
 	}
 	return &user, nil
 }

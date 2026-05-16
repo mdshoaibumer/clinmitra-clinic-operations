@@ -271,3 +271,38 @@ func (s *AuthService) IsAuthenticated() bool {
 	defer s.mu.RUnlock()
 	return s.currentSession != nil
 }
+
+// GetCurrentUserRole returns the role of the currently authenticated user,
+// or an empty string if no session is active.
+func (s *AuthService) GetCurrentUserRole() models.UserRole {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.currentSession != nil {
+		return s.currentSession.Role
+	}
+	return ""
+}
+
+// RequireAuth returns an error if no user is currently authenticated.
+func (s *AuthService) RequireAuth() error {
+	if !s.IsAuthenticated() {
+		return utils.ErrUnauthorized
+	}
+	return nil
+}
+
+// RequireRole returns an error if the current user does not have one of
+// the specified roles. Returns ErrUnauthorized if not logged in,
+// ErrForbidden if the user's role is not in the allowed list.
+func (s *AuthService) RequireRole(allowedRoles ...models.UserRole) error {
+	if err := s.RequireAuth(); err != nil {
+		return err
+	}
+	role := s.GetCurrentUserRole()
+	for _, allowed := range allowedRoles {
+		if role == allowed {
+			return nil
+		}
+	}
+	return utils.ErrForbidden
+}

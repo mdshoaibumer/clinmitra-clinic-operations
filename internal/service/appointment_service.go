@@ -114,7 +114,7 @@ func (s *AppointmentService) CreateAppointment(input CreateAppointmentInput) (*m
 func (s *AppointmentService) UpdateAppointment(id string, input CreateAppointmentInput) (*models.Appointment, error) {
 	appointment, err := s.appointmentRepo.FindByID(id)
 	if err != nil {
-		return nil, utils.ErrNotFound
+		return nil, err
 	}
 
 	if appointment.Status != models.AppointmentScheduled {
@@ -166,7 +166,7 @@ func (s *AppointmentService) UpdateAppointment(id string, input CreateAppointmen
 func (s *AppointmentService) CancelAppointment(id, reason string) error {
 	appointment, err := s.appointmentRepo.FindByID(id)
 	if err != nil {
-		return utils.ErrNotFound
+		return err
 	}
 
 	if appointment.Status == models.AppointmentCompleted {
@@ -191,7 +191,7 @@ func (s *AppointmentService) CancelAppointment(id, reason string) error {
 func (s *AppointmentService) CompleteAppointment(id string) error {
 	appointment, err := s.appointmentRepo.FindByID(id)
 	if err != nil {
-		return utils.ErrNotFound
+		return err
 	}
 
 	if appointment.Status != models.AppointmentScheduled {
