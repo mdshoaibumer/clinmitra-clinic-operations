@@ -4,6 +4,7 @@ import { usePatientStore } from '@/store/patientStore'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import PatientAvatar from '@/components/PatientAvatar'
 import { ArrowLeft, Receipt, Calendar } from 'lucide-react'
 
 export default function PatientDetail() {
@@ -28,7 +29,11 @@ export default function PatientDetail() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/patients')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-2xl font-bold">{currentPatient.name}</h1>
+        <PatientAvatar name={currentPatient.name} size="lg" />
+        <div>
+          <h1 className="text-2xl font-bold">{currentPatient.name}</h1>
+          <p className="text-sm text-muted-foreground">Registered {formatDate(currentPatient.createdAt)}</p>
+        </div>
       </div>
 
       {/* Patient Info */}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useInvoiceStore } from '@/store/invoiceStore'
 import { useSettingsStore } from '@/store/settingsStore'
 import { usePatientStore } from '@/store/patientStore'
@@ -9,20 +9,40 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import InvoiceConfirmDialog from '@/components/billing/InvoiceConfirmDialog'
 import { Plus, Trash2 } from 'lucide-react'
 import type { Treatment } from '@/types/models'
 import type { InvoiceItemInput } from '@/types/api'
 
 export default function Billing() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { invoices, totalCount, page, statusFilter, isLoading, fetchInvoices, setPage, setStatusFilter } = useInvoiceStore()
   const { treatments, fetchTreatments } = useSettingsStore()
   const { patients, fetchPatients } = usePatientStore()
   const [showForm, setShowForm] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [selectedPatient, setSelectedPatient] = useState('')
   const [items, setItems] = useState<(InvoiceItemInput & { key: string })[]>([])
   const [discount, setDiscount] = useState(0)
   const [formError, setFormError] = useState('')
+
+  // Handle action=new from keyboard shortcut or global search
+  useEffect(() => {
+    if (searchParams.get('action') === 'new') {
+      setShowForm(true)
+      if (items.length === 0) {
+        setItems([{
+          key: Date.now().toString(),
+          treatmentId: '',
+          description: '',
+          quantity: 1,
+          unitPrice: 0,
+          toothNumber: '',
+        }])
+      }
+    }
+  }, [searchParams])
 
   useEffect(() => {
     fetchInvoices()
@@ -81,6 +101,11 @@ export default function Billing() {
       return
     }
 
+    // Show confirmation dialog first
+    setShowConfirm(true)
+  }
+
+  const handleConfirmInvoice = async () => {
     try {
       const invoice = await useInvoiceStore.getState().createInvoice({
         patientId: selectedPatient,
@@ -96,6 +121,7 @@ export default function Billing() {
         notes: '',
       })
       setShowForm(false)
+      setShowConfirm(false)
       setItems([])
       setSelectedPatient('')
       setDiscount(0)
@@ -103,6 +129,7 @@ export default function Billing() {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to create invoice'
       setFormError(message)
+      setShowConfirm(false)
     }
   }
 
@@ -209,6 +236,19 @@ export default function Billing() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Invoice Confirmation Dialog */}
+      {showConfirm && (
+        <InvoiceConfirmDialog
+          patient={patients.find(p => p.id === selectedPatient)}
+          items={items}
+          discount={discount}
+          treatments={treatments}
+          subtotal={getSubtotal()}
+          onConfirm={handleConfirmInvoice}
+          onBack={() => setShowConfirm(false)}
+        />
       )}
 
       {/* Filter */}

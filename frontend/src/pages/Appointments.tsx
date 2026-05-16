@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAppointmentStore } from '@/store/appointmentStore'
 import { usePatientStore } from '@/store/patientStore'
 import { useForm, Controller } from 'react-hook-form'
@@ -11,12 +12,32 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePicker } from '@/components/ui/date-picker'
-import { Plus, ChevronLeft, ChevronRight, X, CheckCircle } from 'lucide-react'
+import PatientAvatar from '@/components/PatientAvatar'
+import WeekView from '@/components/appointments/WeekView'
+import { Plus, ChevronLeft, ChevronRight, X, CheckCircle, CalendarDays, List } from 'lucide-react'
+
+type ViewMode = 'day' | 'week'
+
+function getWeekStart(dateStr: string): string {
+  const d = new Date(dateStr)
+  const day = d.getDay()
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1) // Monday start
+  d.setDate(diff)
+  return d.toISOString().split('T')[0]
+}
+
+function getWeekEnd(startStr: string): string {
+  const d = new Date(startStr)
+  d.setDate(d.getDate() + 6)
+  return d.toISOString().split('T')[0]
+}
 
 export default function Appointments() {
-  const { appointments, isLoading, fetchByDate, createAppointment, cancelAppointment, completeAppointment } = useAppointmentStore()
+  const [searchParams] = useSearchParams()
+  const { appointments, isLoading, fetchByDate, fetchWeek, createAppointment, cancelAppointment, completeAppointment } = useAppointmentStore()
   const { patients, fetchPatients } = usePatientStore()
   const [selectedDate, setSelectedDate] = useState(getTodayDate())
+  const [viewMode, setViewMode] = useState<ViewMode>('day')
   const [showForm, setShowForm] = useState(false)
   const [formError, setFormError] = useState('')
 
@@ -25,13 +46,37 @@ export default function Appointments() {
     defaultValues: { date: selectedDate },
   })
 
+  // Handle action=new from keyboard shortcut or global search
   useEffect(() => {
-    fetchByDate(selectedDate)
-  }, [selectedDate, fetchByDate])
+    if (searchParams.get('action') === 'new') {
+      setShowForm(true)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    if (viewMode === 'day') {
+      fetchByDate(selectedDate)
+    } else {
+      const weekStart = getWeekStart(selectedDate)
+      const weekEnd = getWeekEnd(weekStart)
+      fetchWeek(weekStart, weekEnd)
+    }
+  }, [selectedDate, viewMode, fetchByDate, fetchWeek])
 
   useEffect(() => {
     if (showForm) fetchPatients()
   }, [showForm, fetchPatients])
+
+  // Close form on Escape
+  useEffect(() => {
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === 'Escape' && showForm) {
+        setShowForm(false)
+      }
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [showForm])
 
   const changeDate = (days: number) => {
     const d = new Date(selectedDate)
@@ -39,6 +84,12 @@ export default function Appointments() {
     const newDate = d.toISOString().split('T')[0]
     setSelectedDate(newDate)
     setValue('date', newDate)
+  }
+
+  const changeWeek = (weeks: number) => {
+    const d = new Date(selectedDate)
+    d.setDate(d.getDate() + (weeks * 7))
+    setSelectedDate(d.toISOString().split('T')[0])
   }
 
   const onSubmit = async (data: AppointmentFormData) => {
@@ -77,9 +128,30 @@ export default function Appointments() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Appointments</h1>
-        <Button onClick={() => setShowForm(!showForm)}>
-          <Plus className="h-4 w-4 mr-2" /> New Appointment
-        </Button>
+        <div className="flex gap-2">
+          {/* View Mode Toggle */}
+          <div className="flex border rounded-md">
+            <Button
+              variant={viewMode === 'day' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('day')}
+              className="rounded-r-none"
+            >
+              <List className="h-4 w-4 mr-1" /> Day
+            </Button>
+            <Button
+              variant={viewMode === 'week' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('week')}
+              className="rounded-l-none"
+            >
+              <CalendarDays className="h-4 w-4 mr-1" /> Week
+            </Button>
+          </div>
+          <Button onClick={() => setShowForm(!showForm)}>
+            <Plus className="h-4 w-4 mr-2" /> New Appointment
+          </Button>
+        </div>
       </div>
 
       {/* New Appointment Form */}
@@ -148,7 +220,7 @@ export default function Appointments() {
 
       {/* Date Navigation */}
       <div className="flex items-center justify-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => changeDate(-1)}>
+        <Button variant="ghost" size="icon" onClick={() => viewMode === 'day' ? changeDate(-1) : changeWeek(-1)}>
           <ChevronLeft className="h-5 w-5" />
         </Button>
         <div className="text-center">
@@ -158,13 +230,34 @@ export default function Appointments() {
             className="text-center"
           />
           {isToday && <p className="text-xs text-primary font-medium mt-1">Today</p>}
+          {viewMode === 'week' && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Week of {new Date(getWeekStart(selectedDate)).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+            </p>
+          )}
         </div>
-        <Button variant="ghost" size="icon" onClick={() => changeDate(1)}>
+        <Button variant="ghost" size="icon" onClick={() => viewMode === 'day' ? changeDate(1) : changeWeek(1)}>
           <ChevronRight className="h-5 w-5" />
         </Button>
+        {!isToday && (
+          <Button variant="outline" size="sm" onClick={() => setSelectedDate(getTodayDate())}>
+            Today
+          </Button>
+        )}
       </div>
 
-      {/* Appointments List */}
+      {/* Week View */}
+      {viewMode === 'week' && (
+        <WeekView
+          appointments={appointments}
+          weekStart={getWeekStart(selectedDate)}
+          onComplete={handleComplete}
+          onCancel={handleCancel}
+        />
+      )}
+
+      {/* Day View - Appointments List */}
+      {viewMode === 'day' && (
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -182,6 +275,7 @@ export default function Appointments() {
                       <p className="text-sm font-bold">{formatTime(apt.startTime)}</p>
                       <p className="text-xs text-muted-foreground">{apt.duration}min</p>
                     </div>
+                    <PatientAvatar name={apt.patient?.name || 'Patient'} size="sm" />
                     <div>
                       <p className="font-medium">{apt.patient?.name || 'Patient'}</p>
                       <p className="text-sm text-muted-foreground">
@@ -211,6 +305,7 @@ export default function Appointments() {
           )}
         </CardContent>
       </Card>
+      )}
     </div>
   )
 }

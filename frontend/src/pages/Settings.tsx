@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Treatment } from '@/types/models'
-import { Download, Upload, Plus, Trash2 } from 'lucide-react'
+import { Download, Upload, Plus, Trash2, Image, X } from 'lucide-react'
 
 export default function Settings() {
   const { clinic: settings, treatments, isLoading, fetchSettings, fetchTreatments, updateSettings } = useSettingsStore()
@@ -27,6 +27,7 @@ export default function Settings() {
   const [gstEnabled, setGstEnabled] = useState(false)
   const [gstin, setGstin] = useState('')
   const [gstRate, setGstRate] = useState(0)
+  const [logoPreview, setLogoPreview] = useState<string>('')
 
   // Treatment form
   const [showTreatmentForm, setShowTreatmentForm] = useState(false)
@@ -57,6 +58,7 @@ export default function Settings() {
       setGstEnabled(settings.gstEnabled || false)
       setGstin(settings.gstin || '')
       setGstRate(settings.gstRate || 0)
+      setLogoPreview(settings.logoBase64 || '')
     }
   }, [settings])
 
@@ -88,6 +90,52 @@ export default function Settings() {
       setMessage('Settings saved successfully.')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to save settings')
+    }
+  }
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type)) {
+      setError('Please select a PNG, JPG, or WebP image.')
+      return
+    }
+
+    // Validate size (max 512KB)
+    if (file.size > 512 * 1024) {
+      setError('Logo must be less than 512KB.')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = async (event) => {
+      const base64 = event.target?.result as string
+      try {
+        await window.go.handler.SettingsHandler.UploadLogo(base64)
+        setLogoPreview(base64)
+        setMessage('Logo uploaded successfully.')
+        setError('')
+        fetchSettings()
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to upload logo')
+      }
+    }
+    reader.readAsDataURL(file)
+    // Reset input so the same file can be re-selected
+    e.target.value = ''
+  }
+
+  const handleRemoveLogo = async () => {
+    try {
+      await window.go.handler.SettingsHandler.RemoveLogo()
+      setLogoPreview('')
+      setMessage('Logo removed.')
+      setError('')
+      fetchSettings()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to remove logo')
     }
   }
 
@@ -205,6 +253,42 @@ export default function Settings() {
               <div className="space-y-2">
                 <Label>Address</Label>
                 <Input value={clinicAddress} onChange={(e) => setClinicAddress(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="font-medium">Clinic Logo</h3>
+              <p className="text-sm text-muted-foreground">Upload a logo to display on printed invoices. Recommended: PNG or JPG, max 512KB.</p>
+              <div className="flex items-center gap-4">
+                {logoPreview ? (
+                  <div className="relative">
+                    <img src={logoPreview} alt="Clinic Logo" className="h-16 max-w-48 object-contain border rounded p-1" />
+                    <button
+                      onClick={handleRemoveLogo}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+                      title="Remove logo"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="h-16 w-32 border-2 border-dashed rounded flex items-center justify-center text-muted-foreground">
+                    <Image className="h-6 w-6" />
+                  </div>
+                )}
+                <div>
+                  <label className="cursor-pointer">
+                    <Button variant="outline" size="sm" asChild>
+                      <span><Upload className="h-3 w-3 mr-1" /> {logoPreview ? 'Change' : 'Upload'}</span>
+                    </Button>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      className="hidden"
+                      onChange={handleLogoUpload}
+                    />
+                  </label>
+                </div>
               </div>
             </div>
 

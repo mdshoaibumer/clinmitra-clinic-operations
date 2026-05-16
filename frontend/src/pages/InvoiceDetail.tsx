@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useInvoiceStore } from '@/store/invoiceStore'
+import { useSettingsStore } from '@/store/settingsStore'
 import { formatCurrency, formatDate, getStatusColor, rupeesToPaise, getTodayDate } from '@/lib/utils'
 import { INVOICE_STATUS_LABELS, PAYMENT_METHODS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import InvoicePrintView from '@/components/billing/InvoicePrintView'
 import { ArrowLeft, Printer, CreditCard } from 'lucide-react'
 
 export default function InvoiceDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { currentInvoice, isLoading, fetchInvoice, recordPayment } = useInvoiceStore()
+  const { clinic, fetchSettings } = useSettingsStore()
   const [showPayment, setShowPayment] = useState(false)
+  const [isPrinting, setIsPrinting] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [paymentRef, setPaymentRef] = useState('')
@@ -21,7 +25,8 @@ export default function InvoiceDetail() {
 
   useEffect(() => {
     if (id) fetchInvoice(id)
-  }, [id, fetchInvoice])
+    if (!clinic) fetchSettings()
+  }, [id, fetchInvoice, clinic, fetchSettings])
 
   const handleRecordPayment = async () => {
     setPayError('')
@@ -75,7 +80,13 @@ export default function InvoiceDetail() {
               <CreditCard className="h-4 w-4 mr-2" /> Record Payment
             </Button>
           )}
-          <Button variant="outline" onClick={() => window.print()}>
+          <Button variant="outline" onClick={() => {
+            setIsPrinting(true)
+            setTimeout(() => {
+              window.print()
+              setIsPrinting(false)
+            }, 100)
+          }}>
             <Printer className="h-4 w-4 mr-2" /> Print
           </Button>
         </div>
@@ -209,6 +220,9 @@ export default function InvoiceDetail() {
           </CardContent>
         </Card>
       )}
+
+      {/* Print-optimized Invoice View (only mounted during print) */}
+      {isPrinting && <InvoicePrintView invoice={invoice} clinic={clinic} />}
     </div>
   )
 }

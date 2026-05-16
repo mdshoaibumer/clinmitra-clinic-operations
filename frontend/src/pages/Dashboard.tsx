@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/utils'
 import type { DashboardStats } from '@/types/api'
 import type { Appointment } from '@/types/models'
-import { Users, Receipt, Calendar, IndianRupee } from 'lucide-react'
+import { Users, Receipt, Calendar, IndianRupee, Plus, ArrowRight } from 'lucide-react'
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
     async function loadDashboard() {
@@ -30,6 +33,86 @@ export default function Dashboard() {
 
   if (loading) {
     return <div className="text-muted-foreground">Loading dashboard...</div>
+  }
+
+  // Empty state: show onboarding guidance when clinic has no data
+  const isEmpty = stats && stats.totalPatients === 0 && stats.todayAppointments === 0
+
+  if (isEmpty) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Welcome to Clinmitra Dental!</h1>
+
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="py-8">
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full">
+                <Users className="h-8 w-8 text-primary" />
+              </div>
+              <h2 className="text-xl font-semibold">Get Started in 3 Steps</h2>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Your clinic management system is ready. Follow these steps to start managing your practice efficiently.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/patients?action=new')}>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">1</div>
+                <h3 className="font-semibold">Register Your First Patient</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Add patient details — name, phone, and medical history. You can search them instantly later.
+              </p>
+              <Button size="sm" variant="outline" className="w-full">
+                <Plus className="h-4 w-4 mr-2" /> Add Patient <ArrowRight className="h-4 w-4 ml-auto" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/appointments?action=new')}>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-8 w-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-sm font-bold">2</div>
+                <h3 className="font-semibold">Book an Appointment</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Schedule patient visits. View all appointments at a glance on the calendar.
+              </p>
+              <Button size="sm" variant="outline" className="w-full">
+                <Calendar className="h-4 w-4 mr-2" /> Book Appointment <ArrowRight className="h-4 w-4 ml-auto" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/billing?action=new')}>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-8 w-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-sm font-bold">3</div>
+                <h3 className="font-semibold">Create an Invoice</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Generate professional invoices with treatments, GST, and print them instantly.
+              </p>
+              <Button size="sm" variant="outline" className="w-full">
+                <Receipt className="h-4 w-4 mr-2" /> Create Invoice <ArrowRight className="h-4 w-4 ml-auto" />
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardContent className="py-4">
+            <p className="text-sm text-muted-foreground text-center">
+              <strong>Tip:</strong> Use <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">Ctrl+K</kbd> for quick search, <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">Ctrl+N</kbd> for new patient, <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">Ctrl+B</kbd> for new invoice.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
