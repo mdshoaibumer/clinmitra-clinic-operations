@@ -10,21 +10,21 @@ import (
 )
 
 type SetupInput struct {
-	ClinicName         string `json:"clinicName"`
-	DoctorName         string `json:"doctorName"`
+	ClinicName          string `json:"clinicName"`
+	DoctorName          string `json:"doctorName"`
 	DoctorQualification string `json:"doctorQualification"`
-	Address            string `json:"address"`
-	City               string `json:"city"`
-	State              string `json:"state"`
-	Pincode            string `json:"pincode"`
-	Phone              string `json:"phone"`
-	Email              string `json:"email"`
-	GSTIN              string `json:"gstin"`
-	GSTEnabled         bool   `json:"gstEnabled"`
-	InvoicePrefix      string `json:"invoicePrefix"`
-	AdminUsername      string `json:"adminUsername"`
-	AdminPassword      string `json:"adminPassword"`
-	AdminFullName      string `json:"adminFullName"`
+	Address             string `json:"address"`
+	City                string `json:"city"`
+	State               string `json:"state"`
+	Pincode             string `json:"pincode"`
+	Phone               string `json:"phone"`
+	Email               string `json:"email"`
+	GSTIN               string `json:"gstin"`
+	GSTEnabled          bool   `json:"gstEnabled"`
+	InvoicePrefix       string `json:"invoicePrefix"`
+	AdminUsername       string `json:"adminUsername"`
+	AdminPassword       string `json:"adminPassword"`
+	AdminFullName       string `json:"adminFullName"`
 }
 
 type SettingsService struct {
@@ -92,23 +92,23 @@ func (s *SettingsService) CompleteSetup(input SetupInput) error {
 	}
 
 	settings := &models.ClinicSettings{
-		ID:                 uuid.New().String(),
-		ClinicName:         input.ClinicName,
-		DoctorName:         input.DoctorName,
+		ID:                  uuid.New().String(),
+		ClinicName:          input.ClinicName,
+		DoctorName:          input.DoctorName,
 		DoctorQualification: input.DoctorQualification,
-		Address:            input.Address,
-		City:               input.City,
-		State:              input.State,
-		Pincode:            input.Pincode,
-		Phone:              input.Phone,
-		Email:              input.Email,
-		GSTIN:              input.GSTIN,
-		GSTEnabled:         input.GSTEnabled,
-		GSTRate:            18,
-		InvoicePrefix:      prefix,
-		SetupComplete:      true,
-		AutoBackup:         true,
-		BackupPath:         s.cfg.BackupDir,
+		Address:             input.Address,
+		City:                input.City,
+		State:               input.State,
+		Pincode:             input.Pincode,
+		Phone:               input.Phone,
+		Email:               input.Email,
+		GSTIN:               input.GSTIN,
+		GSTEnabled:          input.GSTEnabled,
+		GSTRate:             18,
+		InvoicePrefix:       prefix,
+		SetupComplete:       true,
+		AutoBackup:          true,
+		BackupPath:          s.cfg.BackupDir,
 	}
 
 	return s.clinicRepo.Upsert(settings)
@@ -119,12 +119,49 @@ func (s *SettingsService) GetClinicSettings() (*models.ClinicSettings, error) {
 	return s.clinicRepo.Get()
 }
 
-// UpdateClinicSettings saves updated clinic settings and logs the change.
+// UpdateClinicSettings validates and saves updated clinic settings. Logs the change.
 // Requires admin role.
 func (s *SettingsService) UpdateClinicSettings(settings *models.ClinicSettings) error {
 	if err := s.authService.RequireRole(models.RoleAdmin); err != nil {
 		return err
 	}
+
+	// Validate required fields
+	if err := utils.ValidateRequired("Clinic name", settings.ClinicName); err != nil {
+		return err
+	}
+	if err := utils.ValidateRequired("Doctor name", settings.DoctorName); err != nil {
+		return err
+	}
+
+	// Validate field lengths to prevent oversized inputs
+	if err := utils.ValidateMaxLength("Clinic name", settings.ClinicName, 200); err != nil {
+		return err
+	}
+	if err := utils.ValidateMaxLength("Doctor name", settings.DoctorName, 200); err != nil {
+		return err
+	}
+	if err := utils.ValidateMaxLength("Address", settings.Address, 500); err != nil {
+		return err
+	}
+	if err := utils.ValidateMaxLength("GSTIN", settings.GSTIN, 15); err != nil {
+		return err
+	}
+	if err := utils.ValidateMaxLength("Bank account", settings.BankAccount, 30); err != nil {
+		return err
+	}
+	if err := utils.ValidateMaxLength("IFSC code", settings.IFSCCode, 11); err != nil {
+		return err
+	}
+	if err := utils.ValidateMaxLength("UPI ID", settings.UPIID, 100); err != nil {
+		return err
+	}
+
+	// Validate GST rate if enabled
+	if settings.GSTEnabled && (settings.GSTRate < 0 || settings.GSTRate > 28) {
+		return utils.ValidationError("GST rate must be between 0 and 28%")
+	}
+
 	s.auditService.LogAction(s.authService.GetCurrentUserID(), models.AuditUpdate, "clinic_settings", settings.ID, nil, settings)
 	return s.clinicRepo.Upsert(settings)
 }

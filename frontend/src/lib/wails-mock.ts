@@ -349,9 +349,19 @@ if (typeof window !== 'undefined') {
       }),
     },
     BackupHandler: {
-      ListBackups: async () => ['backup-2025-05-16.db', 'backup-2025-05-15.db'],
-      CreateBackup: async () => 'backup-2025-05-16-manual.db',
+      ListBackups: async () => [
+        { fileName: 'clinmitra_backup_20250516_180000.db', filePath: '/backups/clinmitra_backup_20250516_180000.db', size: 1024000, createdAt: '2025-05-16T18:00:00Z' },
+        { fileName: 'clinmitra_backup_20250515_180000.db', filePath: '/backups/clinmitra_backup_20250515_180000.db', size: 1020000, createdAt: '2025-05-15T18:00:00Z' },
+      ],
+      CreateBackup: async () => ({ fileName: 'clinmitra_backup_20250516_manual.db', filePath: '/backups/clinmitra_backup_20250516_manual.db', size: 1024000, createdAt: new Date().toISOString() }),
       RestoreFromBackup: async (_filename: string) => null,
+      VerifyBackup: async (_filePath: string) => true,
+      GetAutoBackupPath: async () => './backups',
+      DetectCloudDrives: async () => [
+        { provider: 'google_drive', path: 'G:\\My Drive', available: true },
+        { provider: 'onedrive', path: 'C:\\Users\\User\\OneDrive', available: true },
+      ],
+      CreateCloudBackup: async () => ({ fileName: 'clinmitra_backup_cloud.db', filePath: 'G:\\My Drive\\ClinMitra Backups\\clinmitra_backup_cloud.db', size: 1024000, createdAt: new Date().toISOString() }),
     },
   };
 

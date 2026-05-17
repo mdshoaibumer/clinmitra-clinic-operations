@@ -28,6 +28,8 @@ export interface ClinicSettings {
   setupComplete: boolean
   autoBackup: boolean
   backupPath: string
+  cloudBackupEnabled: boolean
+  cloudBackupPath: string
   bankAccount: string
   accountName: string
   bankName: string

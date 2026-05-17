@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Treatment, BackupInfo } from '@/types/models'
-import { Download, Upload, Plus, Trash2, Image, X, Pencil } from 'lucide-react'
+import type { CloudDriveInfo } from '@/types/api'
+import { Download, Upload, Plus, Trash2, Image, X, Pencil, Cloud, CloudOff } from 'lucide-react'
 
 export default function Settings() {
   const { clinic: settings, treatments, isLoading, fetchSettings, fetchTreatments, updateSettings } = useSettingsStore()
@@ -51,7 +52,9 @@ export default function Settings() {
 
   // Backup state
   const [backups, setBackups] = useState<BackupInfo[]>([])
-
+  const [cloudDrives, setCloudDrives] = useState<CloudDriveInfo[]>([])
+  const [cloudBackupEnabled, setCloudBackupEnabled] = useState(false)
+  const [cloudBackupPath, setCloudBackupPath] = useState('')
   useEffect(() => {
     fetchSettings()
     fetchTreatments()
@@ -74,11 +77,16 @@ export default function Settings() {
       setAccountName(settings.accountName || '')
       setIfscCode(settings.ifscCode || '')
       setUpiId(settings.upiId || '')
+      setCloudBackupEnabled(settings.cloudBackupEnabled || false)
+      setCloudBackupPath(settings.cloudBackupPath || '')
     }
   }, [settings])
 
   useEffect(() => {
-    if (activeTab === 'backup') loadBackups()
+    if (activeTab === 'backup') {
+      loadBackups()
+      loadCloudDrives()
+    }
   }, [activeTab])
 
   const loadBackups = async () => {
@@ -86,6 +94,52 @@ export default function Settings() {
       const list = await window.go.handler.BackupHandler.ListBackups()
       setBackups(list || [])
     } catch { setBackups([]) }
+  }
+
+  const loadCloudDrives = async () => {
+    try {
+      const drives = await window.go.handler.BackupHandler.DetectCloudDrives()
+      setCloudDrives(drives || [])
+    } catch { setCloudDrives([]) }
+  }
+
+  const handleSaveCloudBackup = async () => {
+    setError('')
+    setMessage('')
+    try {
+      await updateSettings({
+        ...settings!,
+        cloudBackupEnabled,
+        cloudBackupPath,
+      })
+      setMessage('Cloud backup settings saved. Backups will automatically sync to your cloud drive.')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save cloud backup settings')
+    }
+  }
+
+  const handleCloudBackupNow = async () => {
+    setError('')
+    setMessage('')
+    try {
+      const result = await window.go.handler.BackupHandler.CreateCloudBackup()
+      if (result) {
+        setMessage(`Cloud backup created: ${result.fileName}`)
+      } else {
+        setError('Cloud backup is not configured. Please select a cloud drive folder below.')
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Cloud backup failed')
+    }
+  }
+
+  const getProviderLabel = (provider: string) => {
+    switch (provider) {
+      case 'google_drive': return 'Google Drive'
+      case 'onedrive': return 'OneDrive'
+      case 'dropbox': return 'Dropbox'
+      default: return provider
+    }
   }
 
   const handleSaveClinic = async () => {
@@ -516,33 +570,125 @@ export default function Settings() {
 
       {/* Backup */}
       {activeTab === 'backup' && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Database Backup</CardTitle>
-            <Button onClick={handleCreateBackup}>
-              <Download className="h-4 w-4 mr-2" /> Create Backup
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Backups are stored locally. A backup is automatically created when the application closes.
-            </p>
-            {backups.length === 0 ? (
-              <p className="text-muted-foreground">No backups found.</p>
-            ) : (
-              <div className="space-y-2">
-                {backups.map((backup) => (
-                  <div key={backup.filePath} className="flex items-center justify-between p-3 bg-muted rounded-md">
-                    <span className="text-sm font-mono">{backup.fileName}</span>
-                    <Button variant="outline" size="sm" onClick={() => handleRestore(backup.filePath)}>
-                      <Upload className="h-3 w-3 mr-1" /> Restore
+        <div className="space-y-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Local Backup</CardTitle>
+              <Button onClick={handleCreateBackup}>
+                <Download className="h-4 w-4 mr-2" /> Create Backup
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Backups are stored locally. A backup is automatically created when the application closes.
+              </p>
+              {backups.length === 0 ? (
+                <p className="text-muted-foreground">No backups found.</p>
+              ) : (
+                <div className="space-y-2">
+                  {backups.map((backup) => (
+                    <div key={backup.filePath} className="flex items-center justify-between p-3 bg-muted rounded-md">
+                      <span className="text-sm font-mono">{backup.fileName}</span>
+                      <Button variant="outline" size="sm" onClick={() => handleRestore(backup.filePath)}>
+                        <Upload className="h-3 w-3 mr-1" /> Restore
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Cloud Backup */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {cloudBackupEnabled ? <Cloud className="h-5 w-5 text-blue-500" /> : <CloudOff className="h-5 w-5 text-muted-foreground" />}
+                Cloud Backup (Google Drive / OneDrive)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Automatically backup to Google Drive or OneDrive. Install the desktop sync app
+                (e.g., <strong>Google Drive for Desktop</strong>) and select the synced folder below.
+                Files are saved locally to the sync folder — the cloud app handles the upload automatically.
+              </p>
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={cloudBackupEnabled}
+                  onChange={(e) => setCloudBackupEnabled(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <Label>Enable automatic cloud backup</Label>
+              </div>
+
+              {cloudBackupEnabled && (
+                <div className="space-y-4 pl-7">
+                  {/* Detected drives */}
+                  {cloudDrives.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Detected cloud folders:</Label>
+                      <div className="grid gap-2">
+                        {cloudDrives.map((drive) => (
+                          <button
+                            key={drive.path}
+                            onClick={() => setCloudBackupPath(drive.path)}
+                            className={`flex items-center gap-3 p-3 border rounded-md text-left transition-colors ${
+                              cloudBackupPath === drive.path
+                                ? 'border-primary bg-primary/5'
+                                : 'hover:bg-muted'
+                            }`}
+                          >
+                            <Cloud className="h-4 w-4 text-blue-500 shrink-0" />
+                            <div>
+                              <p className="text-sm font-medium">{getProviderLabel(drive.provider)}</p>
+                              <p className="text-xs text-muted-foreground font-mono">{drive.path}</p>
+                            </div>
+                            {cloudBackupPath === drive.path && (
+                              <span className="ml-auto text-xs text-primary font-medium">Selected</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {cloudDrives.length === 0 && (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-md">
+                      <p className="text-sm text-amber-800">
+                        No cloud drive folders detected. Please install <strong>Google Drive for Desktop</strong> or <strong>OneDrive</strong> and ensure it's syncing.
+                      </p>
+                      <p className="text-xs text-amber-600 mt-1">
+                        You can also manually enter a folder path below.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label>Cloud backup folder path</Label>
+                    <Input
+                      value={cloudBackupPath}
+                      onChange={(e) => setCloudBackupPath(e.target.value)}
+                      placeholder="e.g., G:\My Drive or C:\Users\you\Google Drive"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Backups will be saved to a "ClinMitra Backups" subfolder inside this path.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button onClick={handleSaveCloudBackup}>Save Cloud Settings</Button>
+                    <Button variant="outline" onClick={handleCloudBackupNow}>
+                      <Cloud className="h-4 w-4 mr-2" /> Backup Now
                     </Button>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   )

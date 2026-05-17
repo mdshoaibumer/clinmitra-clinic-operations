@@ -20,6 +20,8 @@ type ClinicSettings struct {
 	SetupComplete       bool   `gorm:"default:false" json:"setupComplete"`
 	AutoBackup          bool   `gorm:"default:true" json:"autoBackup"`
 	BackupPath          string `gorm:"type:text" json:"backupPath"`
+	CloudBackupEnabled  bool   `gorm:"default:false" json:"cloudBackupEnabled"`
+	CloudBackupPath     string `gorm:"type:text" json:"cloudBackupPath"` // Google Drive/OneDrive synced folder
 	BankAccount         string `gorm:"type:text" json:"bankAccount"`
 	AccountName         string `gorm:"type:text" json:"accountName"`
 	BankName            string `gorm:"type:text" json:"bankName"`

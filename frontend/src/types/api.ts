@@ -121,3 +121,16 @@ export interface RecordPaymentInput {
   reference: string
   notes: string
 }
+
+export interface BackupInfo {
+  fileName: string
+  filePath: string
+  size: number
+  createdAt: string
+}
+
+export interface CloudDriveInfo {
+  provider: 'google_drive' | 'onedrive' | 'dropbox'
+  path: string
+  available: boolean
+}

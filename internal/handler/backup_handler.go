@@ -41,3 +41,15 @@ func (h *BackupHandler) ListBackups() ([]service.BackupInfo, error) {
 func (h *BackupHandler) GetAutoBackupPath() string {
 	return h.backupService.GetAutoBackupPath()
 }
+
+// DetectCloudDrives scans the system for Google Drive, OneDrive, and Dropbox
+// sync folders and returns available options for cloud backup configuration.
+func (h *BackupHandler) DetectCloudDrives() []service.CloudDriveInfo {
+	return h.backupService.DetectCloudDrives()
+}
+
+// CreateCloudBackup triggers a backup to the configured cloud sync folder.
+func (h *BackupHandler) CreateCloudBackup() (*service.BackupInfo, error) {
+	result, err := h.backupService.CreateCloudBackup()
+	return result, safeError(err)
+}

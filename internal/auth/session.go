@@ -121,6 +121,17 @@ func (sm *SessionManager) GetActiveSession(userID string) *Session {
 	return nil
 }
 
+// RestoreSession re-registers a persisted session into the in-memory map.
+// Used on application startup to restore sessions that survive restart.
+func (sm *SessionManager) RestoreSession(session *Session) {
+	if session == nil || time.Now().After(session.ExpiresAt) {
+		return
+	}
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	sm.sessions[session.Token] = session
+}
+
 // generateToken creates a 32-byte cryptographically random token encoded
 // as a 64-character hex string for use as a session identifier.
 func generateToken() (string, error) {

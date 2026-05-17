@@ -106,7 +106,7 @@ func NewApplication() (*Application, error) {
 	appointmentService := service.NewAppointmentService(appointmentRepo, patientRepo, authService, auditService, database)
 	invoiceService := service.NewInvoiceService(invoiceRepo, invoiceItemRepo, paymentRepo, patientRepo, treatmentRepo, clinicRepo, patientTreatmentRepo, authService, auditService, database)
 	dashboardService := service.NewDashboardService(invoiceRepo, paymentRepo, appointmentRepo, patientRepo)
-	backupService := service.NewBackupService(database, cfg, authService, auditService)
+	backupService := service.NewBackupService(database, cfg, authService, auditService, clinicRepo)
 
 	// Initialize handlers
 	app := &Application{
@@ -139,8 +139,8 @@ func (a *Application) Startup(ctx context.Context) {
 func (a *Application) Shutdown(ctx context.Context) {
 	slog.Info("application shutting down")
 
-	// Auto-backup on shutdown (best effort)
-	if _, err := a.backupService.CreateBackup(""); err != nil {
+	// Auto-backup on shutdown (best effort — includes cloud sync if configured)
+	if _, err := a.backupService.CreateBackupWithCloudSync(); err != nil {
 		slog.Error("auto-backup on shutdown failed", "error", err)
 	}
 

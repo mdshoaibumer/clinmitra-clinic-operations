@@ -25,6 +25,7 @@ frontend/wailsjs/
 *.db
 *.db-wal
 *.db-shm
+session.json
 
 # Logs
 *.log
@@ -39,3 +40,15 @@ frontend/wailsjs/
 # Playwright
 frontend/playwright-report/
 frontend/test-results/
+
+# Reference/design materials (keep in docs/reference/ but don't track large binaries)
+docs/reference/*.pdf
+docs/reference/*.jpg
+docs/reference/*.png
+docs/reference/*.psd
+*.pdf
+*.psd
+
+# Backup files
+*.bak
+*.backup

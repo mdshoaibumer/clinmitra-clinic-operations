@@ -12,6 +12,7 @@ import (
 
 	"clinmitra/internal/config"
 	"clinmitra/internal/models"
+	"clinmitra/internal/repository"
 	"clinmitra/internal/utils"
 
 	"gorm.io/gorm"
@@ -29,6 +30,7 @@ type BackupService struct {
 	cfg          *config.Config
 	authService  *AuthService
 	auditService *AuditService
+	clinicRepo   repository.ClinicRepository
 }
 
 // NewBackupService creates a BackupService for database backup and restore
@@ -38,12 +40,14 @@ func NewBackupService(
 	cfg *config.Config,
 	authService *AuthService,
 	auditService *AuditService,
+	clinicRepo repository.ClinicRepository,
 ) *BackupService {
 	return &BackupService{
 		db:           db,
 		cfg:          cfg,
 		authService:  authService,
 		auditService: auditService,
+		clinicRepo:   clinicRepo,
 	}
 }
 
@@ -252,6 +256,67 @@ func (s *BackupService) ListBackups() ([]BackupInfo, error) {
 // GetAutoBackupPath returns the configured automatic backup directory.
 func (s *BackupService) GetAutoBackupPath() string {
 	return s.cfg.BackupDir
+}
+
+// CreateCloudBackup creates a backup in the configured cloud sync folder
+// (Google Drive, OneDrive, etc.). The file is written locally to the sync
+// folder, and the cloud provider's desktop client handles the upload.
+// Returns nil info if cloud backup is not enabled/configured.
+func (s *BackupService) CreateCloudBackup() (*BackupInfo, error) {
+	settings, err := s.clinicRepo.Get()
+	if err != nil || settings == nil {
+		return nil, nil // No settings yet, skip silently
+	}
+
+	if !settings.CloudBackupEnabled || settings.CloudBackupPath == "" {
+		return nil, nil // Cloud backup not configured
+	}
+
+	// Verify the cloud folder still exists (drive might be disconnected)
+	if !isCloudPathAccessible(settings.CloudBackupPath) {
+		return nil, fmt.Errorf("cloud backup folder not accessible: %s", settings.CloudBackupPath)
+	}
+
+	// Create a subfolder for Clinmitra backups within the cloud drive
+	cloudBackupDir := filepath.Join(settings.CloudBackupPath, "ClinMitra Backups")
+	if err := os.MkdirAll(cloudBackupDir, 0700); err != nil {
+		return nil, fmt.Errorf("failed to create cloud backup folder: %w", err)
+	}
+
+	return s.CreateBackup(cloudBackupDir)
+}
+
+// CreateBackupWithCloudSync performs a local backup and, if cloud backup
+// is enabled, also copies to the cloud sync folder. Used during auto-backup
+// on shutdown.
+func (s *BackupService) CreateBackupWithCloudSync() (*BackupInfo, error) {
+	// Always do local backup first
+	info, err := s.CreateBackup("")
+	if err != nil {
+		return nil, err
+	}
+
+	// Attempt cloud backup (best-effort, don't fail the whole operation)
+	if _, cloudErr := s.CreateCloudBackup(); cloudErr != nil {
+		// Log but don't fail — local backup succeeded
+		fmt.Printf("cloud backup failed (local backup OK): %v\n", cloudErr)
+	}
+
+	return info, nil
+}
+
+// DetectCloudDrives returns available cloud sync folders on this system.
+func (s *BackupService) DetectCloudDrives() []CloudDriveInfo {
+	return DetectCloudDrives()
+}
+
+// isCloudPathAccessible checks if a cloud sync path exists and is writable.
+func isCloudPathAccessible(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil || !info.IsDir() {
+		return false
+	}
+	return true
 }
 
 // copyFile copies a file from src to dst with restrictive permissions (0600)

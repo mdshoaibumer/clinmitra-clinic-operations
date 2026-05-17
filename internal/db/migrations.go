@@ -76,6 +76,13 @@ func migrations() []Migration {
 				return tx.AutoMigrate(&models.ClinicSettings{})
 			},
 		},
+		{
+			Version:     4,
+			Description: "add_cloud_backup_fields_to_settings",
+			Up: func(tx *gorm.DB) error {
+				return tx.AutoMigrate(&models.ClinicSettings{})
+			},
+		},
 	}
 }
 

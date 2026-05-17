@@ -30,6 +30,7 @@ type AuthService struct {
 	userRepo       repository.UserRepository
 	sessionManager *auth.SessionManager
 	loginLimiter   *auth.LoginLimiter
+	sessionStore   *auth.SessionStore
 	auditService   *AuditService
 	cfg            *config.Config
 	mu             sync.RWMutex
@@ -45,13 +46,25 @@ func NewAuthService(
 	auditService *AuditService,
 	cfg *config.Config,
 ) *AuthService {
-	return &AuthService{
+	sessionStore := auth.NewSessionStore(cfg.DataDir)
+
+	svc := &AuthService{
 		userRepo:       userRepo,
 		sessionManager: sessionManager,
 		loginLimiter:   loginLimiter,
+		sessionStore:   sessionStore,
 		auditService:   auditService,
 		cfg:            cfg,
 	}
+
+	// Restore persisted session on startup
+	if persisted := sessionStore.Load(); persisted != nil {
+		// Re-register in session manager and set as current
+		sessionManager.RestoreSession(persisted)
+		svc.currentSession = persisted
+	}
+
+	return svc
 }
 
 // Login authenticates a user by username/password. It checks the brute-force
@@ -109,6 +122,9 @@ func (s *AuthService) Login(username, password string) (*AuthResponse, error) {
 	s.loginLimiter.ResetAttempts(username)
 	_ = s.userRepo.UpdateLastLogin(user.ID)
 
+	// Persist session to survive app restart
+	_ = s.sessionStore.Save(session)
+
 	s.auditService.LogAction(user.ID, models.AuditLogin, "user", user.ID, nil, map[string]string{
 		"status": "success",
 	})
@@ -130,6 +146,9 @@ func (s *AuthService) Logout() error {
 	session := s.currentSession
 	s.currentSession = nil
 	s.mu.Unlock()
+
+	// Clear persisted session
+	_ = s.sessionStore.Clear()
 
 	if session != nil {
 		s.auditService.LogAction(session.UserID, models.AuditLogout, "user", session.UserID, nil, nil)
