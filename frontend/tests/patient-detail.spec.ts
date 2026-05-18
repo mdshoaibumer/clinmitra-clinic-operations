@@ -4,7 +4,8 @@ import { loginAsAdmin } from './helpers';
 test.describe('Patient Detail', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    await page.goto('/patients/p-fixed');
+    await page.goto('/#/patients/p-fixed');
+    await page.waitForSelector('h1:has-text("John Doe")');
   });
 
   test('should display patient personal information', async ({ page }) => {
@@ -43,6 +44,6 @@ test.describe('Patient Detail', () => {
 
   test('should navigate back to patients list', async ({ page }) => {
     await page.click('button:has(svg.lucide-arrow-left)');
-    await expect(page).toHaveURL(/\/patients$/);
+    await expect(page).toHaveURL(/#\/patients$/);
   });
 });

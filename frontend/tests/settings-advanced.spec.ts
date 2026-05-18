@@ -33,19 +33,20 @@ test.describe('Settings - GST & Backup', () => {
   });
 
   test('should create a backup', async ({ page }) => {
-    await page.click('button:has-text("Backup")');
+    await page.locator('main button:text-is("Backup")').click();
     await page.click('button:has-text("Create Backup")');
     await expect(page.locator('text=Backup created')).toBeVisible();
   });
 
   test('should display backup list', async ({ page }) => {
-    await page.click('button:has-text("Backup")');
-    await expect(page.locator('text=backup-2025-05-16.db')).toBeVisible();
-    await expect(page.locator('text=backup-2025-05-15.db')).toBeVisible();
+    await page.locator('main button:text-is("Backup")').click();
+    await expect(page.locator('text=clinmitra_backup_20250516_180000.db')).toBeVisible();
+    await expect(page.locator('text=clinmitra_backup_20250515_180000.db')).toBeVisible();
   });
 
   test('should show restore confirmation dialog', async ({ page }) => {
-    await page.click('button:has-text("Backup")');
+    await page.locator('main button:text-is("Backup")').click();
+    await page.waitForSelector('text=clinmitra_backup_20250516_180000.db');
 
     // Set up dialog handler
     let dialogMessage = '';

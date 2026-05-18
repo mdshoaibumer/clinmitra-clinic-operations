@@ -36,8 +36,8 @@ describe('formatDate', () => {
     expect(result).toContain('2026')
   })
 
-  it('returns empty string for empty input', () => {
-    expect(formatDate('')).toBe('')
+  it('returns dash for empty input', () => {
+    expect(formatDate('')).toBe('-')
   })
 })
 

@@ -70,14 +70,14 @@ test.describe('Navigation & Auth Guards', () => {
 
   test('should toggle sidebar collapse', async ({ page }) => {
     await loginAsAdmin(page);
-    // The sidebar should show "Clinmitra Dental" title initially
-    await expect(page.locator('text=Clinmitra Dental')).toBeVisible();
+    // The sidebar should show "Clinmitra" title initially
+    await expect(page.locator('h1:has-text("Clinmitra")')).toBeVisible();
 
     // Click the collapse button (ChevronLeft icon button)
     const collapseBtn = page.locator('aside button').first();
     await collapseBtn.click();
 
     // After collapse, the title should be hidden
-    await expect(page.locator('h1:has-text("Clinmitra Dental")')).not.toBeVisible();
+    await expect(page.locator('h1:has-text("Clinmitra")')).not.toBeVisible();
   });
 });

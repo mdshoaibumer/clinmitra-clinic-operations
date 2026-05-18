@@ -4,25 +4,26 @@ import { loginAsAdmin } from './helpers';
 test.describe('Invoice Detail', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    await page.goto('/billing/inv-123');
+    await page.goto('/#/billing/inv-123');
+    await page.waitForSelector('text=Invoice TEST-2605-0001');
   });
 
   test('should display invoice details', async ({ page }) => {
     await expect(page.locator('text=Invoice TEST-2605-0001')).toBeVisible();
 
     // Status badge
-    await expect(page.locator('text=Partial')).toBeVisible();
+    await expect(page.locator('text=Partial').first()).toBeVisible();
 
     // Patient info
-    await expect(page.locator('text=John Doe')).toBeVisible();
-    await expect(page.locator('text=9876543210')).toBeVisible();
+    await expect(page.locator('main p:has-text("John Doe")').first()).toBeVisible();
+    await expect(page.locator('main p:has-text("9876543210")').first()).toBeVisible();
   });
 
   test('should display invoice line items', async ({ page }) => {
-    await expect(page.locator('text=Items')).toBeVisible();
-    await expect(page.locator('text=Root Canal')).toBeVisible();
+    await expect(page.locator('main h3:has-text("Items")')).toBeVisible();
+    await expect(page.locator('main td:has-text("Root Canal")').first()).toBeVisible();
     // Tooth number
-    await expect(page.locator('text=Tooth: 14')).toBeVisible();
+    await expect(page.locator('main span:has-text("Tooth: 14")').first()).toBeVisible();
   });
 
   test('should display payment history', async ({ page }) => {
@@ -61,6 +62,6 @@ test.describe('Invoice Detail', () => {
 
   test('should navigate back to billing list', async ({ page }) => {
     await page.click('button:has(svg.lucide-arrow-left)');
-    await expect(page).toHaveURL(/\/billing$/);
+    await expect(page).toHaveURL(/#\/billing$/);
   });
 });

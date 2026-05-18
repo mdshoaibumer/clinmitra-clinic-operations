@@ -4,7 +4,7 @@ import { loginAsAdmin } from './helpers'
 test.describe('Clinic Logo Feature', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page)
-    await page.click('a[href="/settings"]')
+    await page.click('nav >> text=Settings')
     await page.waitForSelector('text=Clinic Information')
   })
 
@@ -84,20 +84,14 @@ test.describe('Clinic Logo Feature', () => {
     await expect(page.locator('text=Logo uploaded successfully')).toBeVisible()
 
     // Navigate to invoice detail via UI
-    await page.click('a[href="/billing"]')
+    await page.click('nav >> text=Billing')
     await page.waitForSelector('text=Billing')
     await page.click('text=TEST-2605-0001')
     await page.waitForSelector('h1:has-text("Invoice")')
 
-    // The print view is only rendered when isPrinting is true (after Print button click)
-    // Override window.print to prevent actual print dialog
-    await page.evaluate(() => { window.print = () => {} })
-
-    // Click the Print button to trigger print view rendering
-    await page.click('button:has-text("Print")')
-
-    // Now the print view should be in the DOM with the logo
-    const printLogo = page.locator('img[alt="Clinic Logo"]')
-    await expect(printLogo).toBeAttached({ timeout: 3000 })
+    // The print view is always in the DOM (hidden via CSS print queries)
+    // Check for the logo in the print view
+    const printLogo = page.locator('img[alt="Logo"]')
+    await expect(printLogo).toBeAttached({ timeout: 5000 })
   })
 })

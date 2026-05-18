@@ -64,7 +64,7 @@ test.describe('End-to-End Workflow', () => {
     await loginAsAdmin(page);
 
     // Navigate to a patient
-    await page.goto('/patients/p-fixed');
+    await page.goto('/#/patients/p-fixed');
     await expect(page.locator('h1:has-text("John Doe")')).toBeVisible();
 
     // Click "Book Appointment" quick action

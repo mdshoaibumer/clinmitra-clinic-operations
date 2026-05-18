@@ -28,9 +28,9 @@ test.describe('Dashboard', () => {
   });
 
   test('should show today appointments section', async ({ page }) => {
-    // The dashboard has a "Today's Appointments" card
+    // The dashboard has a "Today's Appointments" card with appointment data
     const apptSection = page.locator('text=No appointments scheduled for today.');
-    const apptList = page.locator('div.space-y-2');
+    const apptList = page.locator('main div.space-y-2');
     // Either empty message or appointment list should be visible
     const visible = await apptSection.isVisible() || await apptList.isVisible();
     expect(visible).toBeTruthy();

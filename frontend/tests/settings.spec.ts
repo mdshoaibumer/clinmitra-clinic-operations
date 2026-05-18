@@ -53,10 +53,10 @@ test.describe('Settings', () => {
   });
 
   test('should switch to backup tab', async ({ page }) => {
-    await page.click('button:has-text("Backup")');
+    await page.locator('main button:text-is("Backup")').click();
 
     // Should show backup-related UI
-    await expect(page.getByRole('button', { name: 'Create Backup' })).toBeVisible();
+    await expect(page.locator('button:has-text("Create Backup")')).toBeVisible();
   });
 
   test('should navigate between all tabs', async ({ page }) => {
@@ -67,7 +67,7 @@ test.describe('Settings', () => {
     await page.click('button:has-text("Password")');
     await expect(page.locator('input[type="password"]').first()).toBeVisible();
 
-    await page.click('button:has-text("Backup")');
+    await page.locator('main button:text-is("Backup")').click();
     // Back to Clinic
     await page.click('button:has-text("Clinic")');
     await expect(page.locator('text=Clinic Information')).toBeVisible();
