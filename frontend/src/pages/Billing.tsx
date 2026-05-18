@@ -15,6 +15,7 @@ import type { InvoiceItemInput } from '@/types/api'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import PageTransition from '@/components/PageTransition'
+import { InvoiceListSkeleton } from '@/components/ui/skeletons'
 
 export default function Billing() {
   const navigate = useNavigate()
@@ -305,7 +306,7 @@ export default function Billing() {
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-6 text-center text-muted-foreground">Loading...</div>
+            <div className="p-4"><InvoiceListSkeleton /></div>
           ) : invoices.length === 0 ? (
             <div className="p-6 text-center text-muted-foreground">No invoices found.</div>
           ) : (

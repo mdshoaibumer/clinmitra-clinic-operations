@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 
 import MainLayout from '@/layouts/MainLayout'
 import AuthLayout from '@/layouts/AuthLayout'
+import SplashScreen from '@/components/SplashScreen'
 import Login from '@/pages/Login'
 import SetupWizard from '@/pages/SetupWizard'
 import Dashboard from '@/pages/Dashboard'
@@ -73,11 +74,7 @@ export default function App() {
   }, [checkSession, checkSetup])
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-lg text-muted-foreground">Loading Clinmitra...</div>
-      </div>
-    )
+    return <SplashScreen />
   }
 
   return (

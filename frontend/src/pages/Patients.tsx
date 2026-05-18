@@ -15,6 +15,7 @@ import { Plus, Search, Download } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import PageTransition from '@/components/PageTransition'
+import { PatientListSkeleton } from '@/components/ui/skeletons'
 
 export default function Patients() {
   const navigate = useNavigate()
@@ -281,7 +282,7 @@ export default function Patients() {
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-6 text-center text-muted-foreground">Loading...</div>
+            <div className="p-4"><PatientListSkeleton /></div>
           ) : patients.length === 0 ? (
             <div className="p-6 text-center text-muted-foreground">
               {debouncedSearch ? 'No patients found matching your search.' : 'No patients registered yet. Click "New Patient" to get started.'}

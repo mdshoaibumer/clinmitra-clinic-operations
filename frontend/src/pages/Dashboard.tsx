@@ -6,6 +6,7 @@ import { Users, Receipt, Calendar, IndianRupee, Plus, ArrowRight } from 'lucide-
 import { useQuery } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import PageTransition from '@/components/PageTransition'
+import { DashboardSkeleton } from '@/components/ui/skeletons'
 import { useEffect } from 'react'
 
 export default function Dashboard() {
@@ -35,7 +36,7 @@ export default function Dashboard() {
   const loading = statsLoading || aptLoading
 
   if (loading) {
-    return <div className="text-muted-foreground">Loading dashboard...</div>
+    return <DashboardSkeleton />
   }
 
   // Empty state: show onboarding guidance when clinic has no data

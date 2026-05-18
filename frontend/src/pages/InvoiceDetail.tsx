@@ -54,7 +54,12 @@ export default function InvoiceDetail() {
   }
 
   if (isLoading || !currentInvoice) {
-    return <div className="text-muted-foreground">Loading invoice...</div>
+    return (
+      <div className="space-y-4">
+        <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
+        <div className="h-64 animate-pulse rounded-md bg-muted" />
+      </div>
+    )
   }
 
   const invoice = currentInvoice

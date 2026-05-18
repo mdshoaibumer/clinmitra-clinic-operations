@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
 import { useKeyboardShortcuts } from '@/lib/useKeyboardShortcuts'
 import GlobalSearch from '@/components/GlobalSearch'
+import toothLogo from '@/assets/tooth-logo.avif'
 import {
   LayoutDashboard,
   Users,
@@ -89,7 +90,13 @@ export default function MainLayout() {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           {!sidebarCollapsed && (
-            <h1 className="text-xl font-bold text-primary">Clinmitra Dental</h1>
+            <div className="flex items-center gap-2">
+              <img src={toothLogo} alt="" className="h-7 w-7 object-contain" />
+              <h1 className="text-xl font-bold text-primary">Clinmitra</h1>
+            </div>
+          )}
+          {sidebarCollapsed && (
+            <img src={toothLogo} alt="" className="h-6 w-6 object-contain mx-auto" />
           )}
           <Button variant="ghost" size="icon" onClick={toggleSidebar}>
             {sidebarCollapsed ? <Menu className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
