@@ -436,7 +436,7 @@ func TestInvoiceRepo_ListByPatient(t *testing.T) {
 	patientRepo.Create(patient)
 
 	repo.Create(&models.Invoice{
-		BaseModel: models.BaseModel{ID: uuid.New().String()},
+		BaseModel:     models.BaseModel{ID: uuid.New().String()},
 		InvoiceNumber: "PV-2605-0001", PatientID: patient.ID,
 		InvoiceDate: "2026-05-20", SubTotal: 50000, TotalAmount: 50000, BalanceAmount: 50000, Status: models.InvoiceIssued,
 	})
@@ -465,7 +465,7 @@ func TestInvoiceRepo_GetRevenueByDateRange(t *testing.T) {
 	patientRepo.Create(patient)
 
 	invoice := &models.Invoice{
-		BaseModel: models.BaseModel{ID: uuid.New().String()},
+		BaseModel:     models.BaseModel{ID: uuid.New().String()},
 		InvoiceNumber: "PV-2605-0001", PatientID: patient.ID,
 		InvoiceDate: "2026-05-20", SubTotal: 50000, TotalAmount: 50000, BalanceAmount: 0, Status: models.InvoicePaid,
 	}
