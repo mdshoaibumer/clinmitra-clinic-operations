@@ -18,6 +18,10 @@ Thumbs.db
 *.so
 *.dylib
 
+# Test & coverage
+coverage.out
+*.out
+
 # Wails generated
 frontend/wailsjs/
 
