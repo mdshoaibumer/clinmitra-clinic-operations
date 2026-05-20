@@ -13,7 +13,10 @@ var phoneRegex = regexp.MustCompile(`^[6-9]\d{9}$`)
 func ValidatePhone(phone string) error {
 	cleaned := strings.ReplaceAll(phone, " ", "")
 	cleaned = strings.TrimPrefix(cleaned, "+91")
-	cleaned = strings.TrimPrefix(cleaned, "91")
+	// Only strip bare "91" prefix if the result is a 12-digit number (91 + 10 digits)
+	if len(cleaned) == 12 && strings.HasPrefix(cleaned, "91") {
+		cleaned = cleaned[2:]
+	}
 	if !phoneRegex.MatchString(cleaned) {
 		return ValidationError("Invalid Indian phone number")
 	}
@@ -66,6 +69,9 @@ func CleanPhone(phone string) string {
 	cleaned := strings.ReplaceAll(phone, " ", "")
 	cleaned = strings.ReplaceAll(cleaned, "-", "")
 	cleaned = strings.TrimPrefix(cleaned, "+91")
-	cleaned = strings.TrimPrefix(cleaned, "91")
+	// Only strip bare "91" prefix if the result is a 12-digit number (91 + 10 digits)
+	if len(cleaned) == 12 && strings.HasPrefix(cleaned, "91") {
+		cleaned = cleaned[2:]
+	}
 	return cleaned
 }
