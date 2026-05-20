@@ -81,6 +81,8 @@ func (h *BackupHandler) CreateCloudBackup() (*service.BackupInfo, error) {
 		slog.Error("cloud backup failed", "error", err.Error())
 		return nil, safeError(err)
 	}
-	slog.Info("cloud backup completed", "filePath", result.FilePath)
+	if result != nil {
+		slog.Info("cloud backup completed", "filePath", result.FilePath)
+	}
 	return result, nil
 }

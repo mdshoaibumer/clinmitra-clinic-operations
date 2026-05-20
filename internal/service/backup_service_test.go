@@ -359,3 +359,78 @@ func TestBackupService_RestoreFromBackup_CorruptBackup(t *testing.T) {
 		t.Fatal("expected error for corrupt backup")
 	}
 }
+
+// --- Cloud and Utility Tests ---
+
+func TestBackupService_GetAutoBackupPath(t *testing.T) {
+	svc := setupBackupService(t, models.RoleAdmin)
+	path := svc.GetAutoBackupPath()
+	if path == "" {
+		t.Fatal("expected non-empty backup path")
+	}
+}
+
+func TestBackupService_DetectCloudDrives(t *testing.T) {
+	svc := setupBackupService(t, models.RoleAdmin)
+	drives := svc.DetectCloudDrives()
+	if drives == nil {
+		t.Fatal("expected non-nil slice")
+	}
+}
+
+func TestBackupService_CreateCloudBackup_NoSettings(t *testing.T) {
+	svc := setupBackupService(t, models.RoleAdmin)
+	// mockClinicRepoForBackup.Get() returns nil, nil
+	result, err := svc.CreateCloudBackup()
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if result != nil {
+		t.Fatal("expected nil result when no settings")
+	}
+}
+
+func TestIsCloudPathAccessible(t *testing.T) {
+	// Non-existent path
+	if isCloudPathAccessible("/nonexistent/path/xyz123") {
+		t.Fatal("expected false for non-existent path")
+	}
+
+	// Valid directory
+	tmpDir := t.TempDir()
+	if !isCloudPathAccessible(tmpDir) {
+		t.Fatal("expected true for valid directory")
+	}
+
+	// File (not directory)
+	tmpFile := filepath.Join(tmpDir, "test.txt")
+	os.WriteFile(tmpFile, []byte("hello"), 0644)
+	if isCloudPathAccessible(tmpFile) {
+		t.Fatal("expected false for file")
+	}
+}
+
+func TestIsWritableDir(t *testing.T) {
+	// Empty
+	if isWritableDir("") {
+		t.Fatal("expected false for empty")
+	}
+
+	// Non-existent
+	if isWritableDir("/nonexistent/path/abc789") {
+		t.Fatal("expected false for non-existent")
+	}
+
+	// Valid writable
+	tmpDir := t.TempDir()
+	if !isWritableDir(tmpDir) {
+		t.Fatal("expected true for writable dir")
+	}
+}
+
+func TestDetectCloudDrives_Global(t *testing.T) {
+	drives := DetectCloudDrives()
+	if drives == nil {
+		t.Fatal("expected non-nil")
+	}
+}
