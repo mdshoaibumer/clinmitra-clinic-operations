@@ -70,6 +70,10 @@ declare global {
           ListBackups(): Promise<BackupInfo[]>
           GetAutoBackupPath(): Promise<string>
         }
+        UpdateHandler: {
+          CheckForUpdate(): Promise<{ available: boolean; currentVersion: string; latestVersion: string; downloadURL: string; releaseNotes: string; publishedAt: string }>
+          DownloadAndInstallUpdate(downloadURL: string): Promise<void>
+        }
       }
     }
   }

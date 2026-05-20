@@ -16,7 +16,7 @@ import { Download, Upload, Plus, Trash2, Image, X, Pencil, Cloud, CloudOff } fro
 export default function Settings() {
   const { clinic: settings, treatments, isLoading, fetchSettings, fetchTreatments, updateSettings } = useSettingsStore()
   const { changePassword } = useAuthStore()
-  const [activeTab, setActiveTab] = useState<'clinic' | 'treatments' | 'password' | 'backup'>('clinic')
+  const [activeTab, setActiveTab] = useState<'clinic' | 'treatments' | 'password' | 'backup' | 'about'>('clinic')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -55,6 +55,12 @@ export default function Settings() {
   const [cloudDrives, setCloudDrives] = useState<CloudDriveInfo[]>([])
   const [cloudBackupEnabled, setCloudBackupEnabled] = useState(false)
   const [cloudBackupPath, setCloudBackupPath] = useState('')
+
+  // Update state
+  const [updateInfo, setUpdateInfo] = useState<{ available: boolean; currentVersion: string; latestVersion: string; downloadURL: string; releaseNotes: string } | null>(null)
+  const [checkingUpdate, setCheckingUpdate] = useState(false)
+  const [updating, setUpdating] = useState(false)
+
   useEffect(() => {
     fetchSettings()
     fetchTreatments()
@@ -314,11 +320,37 @@ export default function Settings() {
     }
   }
 
+  const checkForUpdate = async () => {
+    setCheckingUpdate(true)
+    try {
+      const info = await window.go.handler.UpdateHandler.CheckForUpdate()
+      setUpdateInfo(info)
+    } catch {
+      setError('Failed to check for updates')
+    } finally {
+      setCheckingUpdate(false)
+    }
+  }
+
+  const handleUpdate = async () => {
+    if (!updateInfo?.downloadURL) return
+    setUpdating(true)
+    try {
+      await window.go.handler.UpdateHandler.DownloadAndInstallUpdate(updateInfo.downloadURL)
+      setMessage('Update downloaded. Installer will launch shortly...')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Update failed')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   const tabs = [
     { key: 'clinic', label: 'Clinic' },
     { key: 'treatments', label: 'Treatments' },
     { key: 'password', label: 'Password' },
     { key: 'backup', label: 'Backup' },
+    { key: 'about', label: 'About' },
   ] as const
 
   return (
@@ -693,6 +725,68 @@ export default function Settings() {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* About & Updates */}
+      {activeTab === 'about' && (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>About ClinMitra Dental</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Application</p>
+                  <p className="font-medium">ClinMitra Dental</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Version</p>
+                  <p className="font-medium">{updateInfo?.currentVersion || '1.0.0'}</p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="font-medium mb-3">Software Updates</h3>
+                {!updateInfo && (
+                  <Button onClick={checkForUpdate} disabled={checkingUpdate}>
+                    {checkingUpdate ? 'Checking...' : 'Check for Updates'}
+                  </Button>
+                )}
+
+                {updateInfo && !updateInfo.available && (
+                  <div className="flex items-center gap-2 text-green-600">
+                    <span className="text-lg">✓</span>
+                    <span>You're up to date! (v{updateInfo.currentVersion})</span>
+                  </div>
+                )}
+
+                {updateInfo && updateInfo.available && (
+                  <div className="space-y-3">
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <p className="font-medium text-blue-900">
+                        Update available: v{updateInfo.latestVersion}
+                      </p>
+                      {updateInfo.releaseNotes && (
+                        <p className="text-sm text-blue-700 mt-1 whitespace-pre-line">
+                          {updateInfo.releaseNotes}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={handleUpdate} disabled={updating}>
+                        {updating ? 'Downloading...' : 'Download & Install'}
+                      </Button>
+                      <Button variant="ghost" onClick={checkForUpdate} disabled={checkingUpdate}>
+                        Re-check
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
