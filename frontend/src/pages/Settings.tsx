@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Treatment, BackupInfo } from '@/types/models'
 import type { CloudDriveInfo } from '@/types/api'
-import { Download, Upload, Plus, Trash2, Image, X, Pencil, Cloud, CloudOff } from 'lucide-react'
+import { Download, Upload, Plus, Trash2, Image, X, Pencil, Cloud, CloudOff, Loader2, RefreshCw } from 'lucide-react'
+import { useToast } from '@/components/ui/use-toast'
 
 export default function Settings() {
   const { clinic: settings, treatments, isLoading, fetchSettings, fetchTreatments, updateSettings } = useSettingsStore()
@@ -320,13 +321,18 @@ export default function Settings() {
     }
   }
 
+  const { toast } = useToast()
+
   const checkForUpdate = async () => {
     setCheckingUpdate(true)
     try {
       const info = await window.go.handler.UpdateHandler.CheckForUpdate()
       setUpdateInfo(info)
+      if (!info.available) {
+        toast({ title: 'Up to date', description: `You're running the latest version (v${info.currentVersion}).` })
+      }
     } catch {
-      setError('Failed to check for updates')
+      toast({ variant: 'destructive', title: 'Update check failed', description: 'Could not reach the update server. Please check your internet connection.' })
     } finally {
       setCheckingUpdate(false)
     }
@@ -337,9 +343,9 @@ export default function Settings() {
     setUpdating(true)
     try {
       await window.go.handler.UpdateHandler.DownloadAndInstallUpdate(updateInfo.downloadURL)
-      setMessage('Update downloaded. Installer will launch shortly...')
+      toast({ title: 'Update downloaded', description: 'The installer will launch shortly. Please save your work.' })
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Update failed')
+      toast({ variant: 'destructive', title: 'Update failed', description: err instanceof Error ? err.message : 'Download failed. Please try again later.' })
     } finally {
       setUpdating(false)
     }
@@ -732,7 +738,7 @@ export default function Settings() {
 
       {/* About & Updates */}
       {activeTab === 'about' && (
-        <div className="space-y-4">
+        <div className="space-y-4" role="tabpanel" aria-label="About and updates">
           <Card>
             <CardHeader>
               <CardTitle>About ClinMitra Dental</CardTitle>
@@ -745,27 +751,39 @@ export default function Settings() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Version</p>
-                  <p className="font-medium">{updateInfo?.currentVersion || '1.0.0'}</p>
+                  <p className="font-medium" aria-label="Current version">{updateInfo?.currentVersion || '1.0.0'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Developer</p>
+                  <p className="font-medium">ClinMitra</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">License</p>
+                  <p className="font-medium">Proprietary</p>
                 </div>
               </div>
 
               <div className="border-t pt-4">
                 <h3 className="font-medium mb-3">Software Updates</h3>
                 {!updateInfo && (
-                  <Button onClick={checkForUpdate} disabled={checkingUpdate}>
-                    {checkingUpdate ? 'Checking...' : 'Check for Updates'}
+                  <Button onClick={checkForUpdate} disabled={checkingUpdate} aria-busy={checkingUpdate}>
+                    {checkingUpdate ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" />Checking...</>
+                    ) : (
+                      <><RefreshCw className="h-4 w-4 mr-2" aria-hidden="true" />Check for Updates</>
+                    )}
                   </Button>
                 )}
 
                 {updateInfo && !updateInfo.available && (
-                  <div className="flex items-center gap-2 text-green-600">
-                    <span className="text-lg">✓</span>
+                  <div className="flex items-center gap-2 text-green-600" role="status" aria-live="polite">
+                    <span className="text-lg" aria-hidden="true">✓</span>
                     <span>You're up to date! (v{updateInfo.currentVersion})</span>
                   </div>
                 )}
 
                 {updateInfo && updateInfo.available && (
-                  <div className="space-y-3">
+                  <div className="space-y-3" role="alert" aria-live="polite">
                     <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
                       <p className="font-medium text-blue-900">
                         Update available: v{updateInfo.latestVersion}
@@ -777,10 +795,15 @@ export default function Settings() {
                       )}
                     </div>
                     <div className="flex gap-2">
-                      <Button onClick={handleUpdate} disabled={updating}>
-                        {updating ? 'Downloading...' : 'Download & Install'}
+                      <Button onClick={handleUpdate} disabled={updating} aria-busy={updating}>
+                        {updating ? (
+                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" />Downloading...</>
+                        ) : (
+                          <><Download className="h-4 w-4 mr-2" aria-hidden="true" />Download & Install</>
+                        )}
                       </Button>
                       <Button variant="ghost" onClick={checkForUpdate} disabled={checkingUpdate}>
+                        <RefreshCw className={`h-4 w-4 mr-2 ${checkingUpdate ? 'animate-spin' : ''}`} aria-hidden="true" />
                         Re-check
                       </Button>
                     </div>
