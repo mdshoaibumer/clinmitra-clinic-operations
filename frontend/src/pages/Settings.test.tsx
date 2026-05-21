@@ -39,8 +39,7 @@ const mockDetectCloudDrives = vi.fn().mockResolvedValue([])
 
 beforeEach(() => {
   vi.clearAllMocks()
-  // @ts-expect-error - mock Wails runtime
-  window.go = {
+  ;(window as any).go = {
     handler: {
       UpdateHandler: {
         CheckForUpdate: mockCheckForUpdate,
