@@ -45,6 +45,17 @@ func (r *invoiceRepo) List(page, pageSize int, filters InvoiceFilters) ([]models
 	var invoices []models.Invoice
 	var total int64
 
+	// Defense-in-depth: enforce sane bounds even if caller doesn't
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 20
+	}
+	if pageSize > 1000 {
+		pageSize = 1000
+	}
+
 	query := r.db.Model(&models.Invoice{})
 
 	if filters.Status != "" {
@@ -143,6 +154,32 @@ func (r *invoiceRepo) GetRevenueByDateRange(startDate, endDate string) (int64, e
 	err := r.db.Model(&models.Payment{}).
 		Select("COALESCE(SUM(amount), 0) as total").
 		Where("payment_date >= ? AND payment_date <= ?", startDate, endDate).
+		Scan(&result).Error
+	return result.Total, WrapError(err)
+}
+
+// GetTotalInvoicedByDateRange returns total invoiced amount (in paise) for
+// invoices created within the specified date range (inclusive), excluding voided.
+func (r *invoiceRepo) GetTotalInvoicedByDateRange(startDate, endDate string) (int64, error) {
+	var result struct {
+		Total int64
+	}
+	err := r.db.Model(&models.Invoice{}).
+		Select("COALESCE(SUM(total_amount), 0) as total").
+		Where("invoice_date >= ? AND invoice_date <= ? AND status != ?", startDate, endDate, models.InvoiceVoid).
+		Scan(&result).Error
+	return result.Total, WrapError(err)
+}
+
+// GetOutstandingByDateRange returns total outstanding (balance) for invoices
+// created within the specified date range (inclusive), excluding voided.
+func (r *invoiceRepo) GetOutstandingByDateRange(startDate, endDate string) (int64, error) {
+	var result struct {
+		Total int64
+	}
+	err := r.db.Model(&models.Invoice{}).
+		Select("COALESCE(SUM(balance_amount), 0) as total").
+		Where("invoice_date >= ? AND invoice_date <= ? AND status != ?", startDate, endDate, models.InvoiceVoid).
 		Scan(&result).Error
 	return result.Total, WrapError(err)
 }

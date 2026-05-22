@@ -9,7 +9,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import InvoicePrintView from '@/components/billing/InvoicePrintView'
+import WhatsAppDialog from '@/components/WhatsAppDialog'
 import { ArrowLeft, Printer, CreditCard } from 'lucide-react'
+import type { WhatsAppMessageResult } from '@/types/api'
 
 export default function InvoiceDetail() {
   const { id } = useParams<{ id: string }>()
@@ -21,6 +23,8 @@ export default function InvoiceDetail() {
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [paymentRef, setPaymentRef] = useState('')
   const [payError, setPayError] = useState('')
+  const [whatsAppOpen, setWhatsAppOpen] = useState(false)
+  const [whatsAppMessage, setWhatsAppMessage] = useState<WhatsAppMessageResult | null>(null)
 
   useEffect(() => {
     if (id) fetchInvoice(id)
@@ -44,9 +48,22 @@ export default function InvoiceDetail() {
         reference: paymentRef,
         notes: '',
       })
+      const paidMethod = paymentMethod
       setShowPayment(false)
       setPaymentAmount('')
       setPaymentRef('')
+
+      // Prepare WhatsApp invoice message
+      try {
+        const templates = await window.go.handler.WhatsAppHandler.GetWhatsAppTemplates()
+        if (templates.enabled) {
+          const result = await window.go.handler.WhatsAppHandler.PrepareInvoiceMessage(currentInvoice!.id, paidMethod)
+          setWhatsAppMessage(result)
+          setWhatsAppOpen(true)
+        }
+      } catch (waErr) {
+        console.error('WhatsApp message preparation failed:', waErr)
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to record payment'
       setPayError(message)
@@ -223,6 +240,14 @@ export default function InvoiceDetail() {
 
       {/* Print View: Always in DOM but only visible during print */}
       <InvoicePrintView invoice={invoice} clinic={clinic} />
+
+      {/* WhatsApp Dialog */}
+      <WhatsAppDialog
+        isOpen={whatsAppOpen}
+        onClose={() => { setWhatsAppOpen(false); setWhatsAppMessage(null) }}
+        messageResult={whatsAppMessage}
+        title="Send Payment Receipt"
+      />
     </>
   )
 }

@@ -127,7 +127,7 @@ func TestE2E_FullClinicWorkflow(t *testing.T) {
 			Address:       "123 MG Road, Pune",
 			City:          "Pune",
 			AdminUsername: "admin",
-			AdminPassword: "admin123",
+			AdminPassword: "Admin1234",
 			AdminFullName: "Dr. Ravi Patel",
 		})
 		if err != nil {
@@ -149,7 +149,7 @@ func TestE2E_FullClinicWorkflow(t *testing.T) {
 			DoctorName:    "Dr. Evil",
 			Phone:         "9876543211",
 			AdminUsername: "admin2",
-			AdminPassword: "pass123",
+			AdminPassword: "Pass1234",
 			AdminFullName: "Evil Doctor",
 		})
 		if err == nil {
@@ -171,13 +171,13 @@ func TestE2E_FullClinicWorkflow(t *testing.T) {
 		}
 
 		// Login with wrong username
-		_, err = authService.Login("nonexistent", "admin123")
+		_, err = authService.Login("nonexistent", "Admin1234")
 		if err == nil {
 			t.Fatal("expected error for wrong username")
 		}
 
 		// Login with correct credentials
-		resp, err := authService.Login("admin", "admin123")
+		resp, err := authService.Login("admin", "Admin1234")
 		if err != nil {
 			t.Fatalf("Login error: %v", err)
 		}
@@ -677,7 +677,7 @@ func TestE2E_FullClinicWorkflow(t *testing.T) {
 	// =========================================================================
 	t.Run("Step15_PasswordChange", func(t *testing.T) {
 		// Change password
-		err := authService.ChangePassword("admin123", "newpass456")
+		err := authService.ChangePassword("Admin1234", "NewPass456")
 		if err != nil {
 			t.Fatalf("ChangePassword error: %v", err)
 		}
@@ -689,13 +689,13 @@ func TestE2E_FullClinicWorkflow(t *testing.T) {
 		}
 
 		// Old password should fail
-		_, err = authService.Login("admin", "admin123")
+		_, err = authService.Login("admin", "Admin1234")
 		if err == nil {
 			t.Fatal("expected error with old password after change")
 		}
 
 		// New password should work
-		resp, err := authService.Login("admin", "newpass456")
+		resp, err := authService.Login("admin", "NewPass456")
 		if err != nil {
 			t.Fatalf("Login with new password error: %v", err)
 		}
@@ -714,7 +714,7 @@ func TestE2E_FullClinicWorkflow(t *testing.T) {
 		}
 
 		// Should be locked now
-		_, err := authService.Login("admin", "newpass456")
+		_, err := authService.Login("admin", "NewPass456")
 		if err == nil {
 			t.Fatal("expected account locked error")
 		}
@@ -918,10 +918,10 @@ func TestE2E_ConcurrentPatientCreation(t *testing.T) {
 		DoctorName:    "Dr. Test",
 		Phone:         "9999999999",
 		AdminUsername: "admin",
-		AdminPassword: "admin123",
+		AdminPassword: "Admin1234",
 		AdminFullName: "Admin",
 	})
-	authService.Login("admin", "admin123")
+	authService.Login("admin", "Admin1234")
 
 	// Create first patient
 	_, err := patientService.CreatePatient(CreatePatientInput{
@@ -952,7 +952,7 @@ func TestE2E_SessionManagement(t *testing.T) {
 		DoctorName:    "Dr. Session",
 		Phone:         "9999999998",
 		AdminUsername: "sessionadmin",
-		AdminPassword: "pass123",
+		AdminPassword: "Pass1234",
 		AdminFullName: "Session Admin",
 	})
 
@@ -963,7 +963,7 @@ func TestE2E_SessionManagement(t *testing.T) {
 	}
 
 	// Login
-	_, err := authService.Login("sessionadmin", "pass123")
+	_, err := authService.Login("sessionadmin", "Pass1234")
 	if err != nil {
 		t.Fatalf("login error: %v", err)
 	}
@@ -1001,10 +1001,10 @@ func TestE2E_AppointmentWeekView(t *testing.T) {
 		DoctorName:    "Dr. Week",
 		Phone:         "9999999997",
 		AdminUsername: "weekadmin",
-		AdminPassword: "pass123",
+		AdminPassword: "Pass1234",
 		AdminFullName: "Week Admin",
 	})
-	authService.Login("weekadmin", "pass123")
+	authService.Login("weekadmin", "Pass1234")
 
 	// Create patient
 	p, err := patientService.CreatePatient(CreatePatientInput{

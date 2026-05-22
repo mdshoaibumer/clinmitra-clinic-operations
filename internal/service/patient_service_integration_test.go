@@ -8,6 +8,8 @@ import (
 	"clinmitra/internal/models"
 	"clinmitra/internal/repository"
 	"clinmitra/internal/utils"
+
+	"gorm.io/gorm"
 )
 
 // --- Mock Repositories for Patient Service Tests ---
@@ -74,6 +76,9 @@ func (m *mockPatientRepoForService) FindByPhone(phone string) (*models.Patient, 
 func (m *mockPatientRepoForService) Count() (int64, error) {
 	return int64(len(m.patients)), nil
 }
+func (m *mockPatientRepoForService) CountSince(sinceDate string) (int64, error) {
+	return 0, nil
+}
 
 type mockPatientTreatmentRepoForService struct{}
 
@@ -104,10 +109,17 @@ func (m *mockInvoiceRepoForPatient) GetOutstandingByPatient(patientID string) (i
 }
 func (m *mockInvoiceRepoForPatient) GetTotalOutstanding() (int64, error)              { return 0, nil }
 func (m *mockInvoiceRepoForPatient) GetRevenueByDateRange(s, e string) (int64, error) { return 0, nil }
+func (m *mockInvoiceRepoForPatient) GetTotalInvoicedByDateRange(s, e string) (int64, error) {
+	return 0, nil
+}
+func (m *mockInvoiceRepoForPatient) GetOutstandingByDateRange(s, e string) (int64, error) {
+	return 0, nil
+}
 
 type mockAuditRepoForPatientTests struct{}
 
-func (m *mockAuditRepoForPatientTests) Create(log *models.AuditLog) error { return nil }
+func (m *mockAuditRepoForPatientTests) Create(log *models.AuditLog) error                { return nil }
+func (m *mockAuditRepoForPatientTests) CreateTx(tx *gorm.DB, log *models.AuditLog) error { return nil }
 func (m *mockAuditRepoForPatientTests) ListByEntity(entityType, entityID string) ([]models.AuditLog, error) {
 	return nil, nil
 }

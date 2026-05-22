@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-05-22
+
+### Security
+- Enforce password complexity: minimum 8 characters with uppercase, lowercase, and digit required
+- Add `RequireAuth()` guards on all data-mutation service methods (CreatePatient, UpdatePatient, CreateAppointment, UpdateAppointment, CancelAppointment, CompleteAppointment, CreateInvoice, RecordPayment)
+- Limit GitHub API response parsing to 1MB to prevent memory exhaustion
+- Cap update installer download to 200MB to prevent disk exhaustion
+- Add max-length validation on patient free-text fields (Name: 200, Address: 500, MedicalHistory: 5000, Allergies: 2000, Notes: 5000)
+
+### Fixed
+- Version string mismatch: config.go now synced with wails.json and package.json
+- Added `ValidatePassword` unit tests (13 test cases)
+- Updated all test passwords to meet new complexity requirements
+
 ## [1.1.0] - 2026-05-21
 
 ### Added

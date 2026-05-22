@@ -1,4 +1,4 @@
-import type { AuthResponse, PatientListResponse, InvoiceListResponse, CreatePatientInput, CreateAppointmentInput, CreateInvoiceInput, RecordPaymentInput, DashboardStats, DailyReport, MonthlyReport, SetupInput, CloudDriveInfo } from './api'
+import type { AuthResponse, PatientListResponse, InvoiceListResponse, CreatePatientInput, CreateAppointmentInput, CreateInvoiceInput, RecordPaymentInput, DashboardStats, DailyReport, MonthlyReport, SetupInput, CloudDriveInfo, WhatsAppTemplates, WhatsAppMessageResult } from './api'
 import type { Patient, PatientTreatment, Appointment, Invoice, Payment, Treatment, ClinicSettings, BackupInfo } from './models'
 
 export {}
@@ -73,6 +73,13 @@ declare global {
         UpdateHandler: {
           CheckForUpdate(): Promise<{ available: boolean; currentVersion: string; latestVersion: string; downloadURL: string; releaseNotes: string; publishedAt: string }>
           DownloadAndInstallUpdate(downloadURL: string): Promise<void>
+        }
+        WhatsAppHandler: {
+          GetWhatsAppTemplates(): Promise<WhatsAppTemplates>
+          PrepareWelcomeMessage(patient: Patient): Promise<WhatsAppMessageResult>
+          PrepareInvoiceMessage(invoiceID: string, paymentMethod: string): Promise<WhatsAppMessageResult>
+          IsWhatsAppInstalled(): Promise<boolean>
+          SendViaWhatsApp(url: string): Promise<void>
         }
       }
     }

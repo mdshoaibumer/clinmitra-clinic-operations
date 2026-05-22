@@ -83,6 +83,13 @@ func migrations() []Migration {
 				return tx.AutoMigrate(&models.ClinicSettings{})
 			},
 		},
+		{
+			Version:     5,
+			Description: "add_whatsapp_template_fields_to_settings",
+			Up: func(tx *gorm.DB) error {
+				return tx.AutoMigrate(&models.ClinicSettings{})
+			},
+		},
 	}
 }
 

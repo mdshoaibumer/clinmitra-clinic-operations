@@ -47,6 +47,17 @@ func (r *patientRepo) List(page, pageSize int, search string) ([]models.Patient,
 	var patients []models.Patient
 	var total int64
 
+	// Defense-in-depth: enforce sane bounds even if caller doesn't
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 20
+	}
+	if pageSize > 1000 {
+		pageSize = 1000
+	}
+
 	query := r.db.Model(&models.Patient{})
 
 	if search != "" {
@@ -82,5 +93,12 @@ func (r *patientRepo) FindByPhone(phone string) (*models.Patient, error) {
 func (r *patientRepo) Count() (int64, error) {
 	var count int64
 	err := r.db.Model(&models.Patient{}).Count(&count).Error
+	return count, err
+}
+
+// CountSince returns the number of patients created on or after the given date.
+func (r *patientRepo) CountSince(sinceDate string) (int64, error) {
+	var count int64
+	err := r.db.Model(&models.Patient{}).Where("created_at >= ?", sinceDate).Count(&count).Error
 	return count, err
 }

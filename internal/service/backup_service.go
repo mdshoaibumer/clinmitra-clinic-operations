@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -72,7 +73,8 @@ func (s *BackupService) CreateBackup(destinationDir string) (*BackupInfo, error)
 	destinationDir = absDir
 
 	if err := os.MkdirAll(destinationDir, 0700); err != nil {
-		return nil, fmt.Errorf("failed to create backup directory: %w", err)
+		slog.Error("failed to create backup directory", "dir", destinationDir, "error", err)
+		return nil, utils.InternalError("Failed to create backup directory")
 	}
 
 	timestamp := time.Now().Format("20060102_150405")
@@ -87,19 +89,21 @@ func (s *BackupService) CreateBackup(destinationDir string) (*BackupInfo, error)
 
 	// Force WAL checkpoint before backup
 	if _, err := sqlDB.Exec("PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {
-		return nil, fmt.Errorf("failed to checkpoint: %w", err)
+		slog.Error("failed to checkpoint WAL", "error", err)
+		return nil, utils.InternalError("Failed to checkpoint database")
 	}
 
 	// Copy database file
 	if err := copyFile(s.cfg.DBPath, destPath); err != nil {
-		return nil, fmt.Errorf("failed to copy database: %w", err)
+		slog.Error("failed to copy database file", "src", s.cfg.DBPath, "dest", destPath, "error", err)
+		return nil, utils.InternalError("Failed to copy database file")
 	}
 
 	// Verify backup integrity
 	valid, err := s.VerifyBackup(destPath)
 	if err != nil || !valid {
 		os.Remove(destPath)
-		return nil, fmt.Errorf("backup integrity check failed")
+		return nil, utils.InternalError("Backup integrity check failed")
 	}
 
 	info, err := os.Stat(destPath)
@@ -157,17 +161,20 @@ func (s *BackupService) RestoreFromBackup(backupPath string) error {
 	// Create a safety backup of current database
 	safetyDir := filepath.Join(s.cfg.BackupDir, "pre_restore")
 	if err := os.MkdirAll(safetyDir, 0700); err != nil {
-		return fmt.Errorf("failed to create safety backup directory: %w", err)
+		slog.Error("failed to create safety backup directory", "dir", safetyDir, "error", err)
+		return utils.InternalError("Failed to create safety backup directory")
 	}
 	safetyPath := filepath.Join(safetyDir, fmt.Sprintf("pre_restore_%s.db", time.Now().Format("20060102_150405")))
 	if err := copyFile(s.cfg.DBPath, safetyPath); err != nil {
-		return fmt.Errorf("failed to create safety backup before restore: %w", err)
+		slog.Error("failed to create safety backup", "error", err)
+		return utils.InternalError("Failed to create safety backup before restore")
 	}
 
 	// Close current database
 	sqlDB, err := s.db.DB()
 	if err != nil {
-		return fmt.Errorf("failed to access database connection: %w", err)
+		slog.Error("failed to access database connection", "error", err)
+		return utils.InternalError("Failed to access database connection")
 	}
 	sqlDB.Close()
 
@@ -175,7 +182,8 @@ func (s *BackupService) RestoreFromBackup(backupPath string) error {
 	if err := copyFile(backupPath, s.cfg.DBPath); err != nil {
 		// Attempt to restore from safety backup
 		_ = copyFile(safetyPath, s.cfg.DBPath)
-		return fmt.Errorf("failed to restore: %w", err)
+		slog.Error("failed to restore database", "error", err)
+		return utils.InternalError("Failed to restore database")
 	}
 
 	// The database connection is now closed. The application must be
@@ -189,7 +197,7 @@ func (s *BackupService) VerifyBackup(filePath string) (bool, error) {
 	// Resolve to absolute path for safety
 	absPath, err := filepath.Abs(filePath)
 	if err != nil {
-		return false, fmt.Errorf("invalid file path: %w", err)
+		return false, utils.InternalError("Invalid file path")
 	}
 
 	db, err := sql.Open("sqlite", absPath+"?mode=ro")
@@ -274,13 +282,14 @@ func (s *BackupService) CreateCloudBackup() (*BackupInfo, error) {
 
 	// Verify the cloud folder still exists (drive might be disconnected)
 	if !isCloudPathAccessible(settings.CloudBackupPath) {
-		return nil, fmt.Errorf("cloud backup folder not accessible: %s", settings.CloudBackupPath)
+		return nil, utils.InternalError("Cloud backup folder not accessible: " + settings.CloudBackupPath)
 	}
 
 	// Create a subfolder for Clinmitra backups within the cloud drive
 	cloudBackupDir := filepath.Join(settings.CloudBackupPath, "ClinMitra Backups")
 	if err := os.MkdirAll(cloudBackupDir, 0700); err != nil {
-		return nil, fmt.Errorf("failed to create cloud backup folder: %w", err)
+		slog.Error("failed to create cloud backup folder", "path", cloudBackupDir, "error", err)
+		return nil, utils.InternalError("Failed to create cloud backup folder")
 	}
 
 	return s.CreateBackup(cloudBackupDir)

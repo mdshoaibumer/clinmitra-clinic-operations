@@ -3,10 +3,13 @@ package service
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"clinmitra/internal/auth"
 	"clinmitra/internal/models"
 	"clinmitra/internal/utils"
+
+	"gorm.io/gorm"
 )
 
 // --- Mock Appointment Repository ---
@@ -104,12 +107,16 @@ func (m *mockPatientRepoForAppointment) FindByPhone(phone string) (*models.Patie
 	return nil, utils.ErrNotFound
 }
 func (m *mockPatientRepoForAppointment) Count() (int64, error) { return 0, nil }
+func (m *mockPatientRepoForAppointment) CountSince(sinceDate string) (int64, error) {
+	return 0, nil
+}
 
 // --- Mock Audit Repo for Tests ---
 
 type mockAuditRepoForApptTests struct{}
 
-func (m *mockAuditRepoForApptTests) Create(log *models.AuditLog) error { return nil }
+func (m *mockAuditRepoForApptTests) Create(log *models.AuditLog) error                { return nil }
+func (m *mockAuditRepoForApptTests) CreateTx(tx *gorm.DB, log *models.AuditLog) error { return nil }
 func (m *mockAuditRepoForApptTests) ListByEntity(entityType, entityID string) ([]models.AuditLog, error) {
 	return nil, nil
 }
@@ -124,6 +131,23 @@ func newTestAuditService() *AuditService {
 	return NewAuditService(&mockAuditRepoForApptTests{})
 }
 
+// newAuthenticatedAuthService creates an AuthService with an active session
+// for use in tests that require authentication.
+func newAuthenticatedAuthService() *AuthService {
+	sm := auth.NewSessionManager(8)
+	svc := &AuthService{sessionManager: sm}
+	svc.currentSession = &auth.Session{
+		Token:     "test-token",
+		UserID:    "test-user",
+		Username:  "testadmin",
+		FullName:  "Test Admin",
+		Role:      models.RoleAdmin,
+		CreatedAt: time.Now(),
+		ExpiresAt: time.Now().Add(8 * time.Hour),
+	}
+	return svc
+}
+
 // --- Appointment Service Tests ---
 
 func TestAppointmentService_CancelAppointment_NotFound(t *testing.T) {
@@ -132,7 +156,7 @@ func TestAppointmentService_CancelAppointment_NotFound(t *testing.T) {
 	svc := &AppointmentService{
 		appointmentRepo: apptRepo,
 		patientRepo:     newMockPatientRepoForAppointment(),
-		authService:     &AuthService{sessionManager: auth.NewSessionManager(8)},
+		authService:     newAuthenticatedAuthService(),
 		auditService:    newTestAuditService(),
 	}
 
@@ -160,7 +184,7 @@ func TestAppointmentService_CancelAppointment_AlreadyCompleted(t *testing.T) {
 	svc := &AppointmentService{
 		appointmentRepo: apptRepo,
 		patientRepo:     newMockPatientRepoForAppointment(),
-		authService:     &AuthService{sessionManager: auth.NewSessionManager(8)},
+		authService:     newAuthenticatedAuthService(),
 		auditService:    newTestAuditService(),
 	}
 
@@ -189,7 +213,7 @@ func TestAppointmentService_CancelAppointment_Success(t *testing.T) {
 	svc := &AppointmentService{
 		appointmentRepo: apptRepo,
 		patientRepo:     newMockPatientRepoForAppointment(),
-		authService:     &AuthService{sessionManager: auth.NewSessionManager(8)},
+		authService:     newAuthenticatedAuthService(),
 		auditService:    newTestAuditService(),
 	}
 
@@ -218,7 +242,7 @@ func TestAppointmentService_CompleteAppointment_NotScheduled(t *testing.T) {
 	svc := &AppointmentService{
 		appointmentRepo: apptRepo,
 		patientRepo:     newMockPatientRepoForAppointment(),
-		authService:     &AuthService{sessionManager: auth.NewSessionManager(8)},
+		authService:     newAuthenticatedAuthService(),
 		auditService:    newTestAuditService(),
 	}
 
@@ -243,7 +267,7 @@ func TestAppointmentService_CreateAppointment_PatientNotFound(t *testing.T) {
 	svc := &AppointmentService{
 		appointmentRepo: apptRepo,
 		patientRepo:     patientRepo,
-		authService:     &AuthService{sessionManager: auth.NewSessionManager(8)},
+		authService:     newAuthenticatedAuthService(),
 		auditService:    newTestAuditService(),
 	}
 
@@ -285,7 +309,7 @@ func TestAppointmentService_CreateAppointment_TimeConflict(t *testing.T) {
 	svc := &AppointmentService{
 		appointmentRepo: apptRepo,
 		patientRepo:     patientRepo,
-		authService:     &AuthService{sessionManager: auth.NewSessionManager(8)},
+		authService:     newAuthenticatedAuthService(),
 		auditService:    newTestAuditService(),
 	}
 
@@ -314,7 +338,7 @@ func TestAppointmentService_CreateAppointment_MissingFields(t *testing.T) {
 	svc := &AppointmentService{
 		appointmentRepo: newMockAppointmentRepoForService(),
 		patientRepo:     newMockPatientRepoForAppointment(),
-		authService:     &AuthService{sessionManager: auth.NewSessionManager(8)},
+		authService:     newAuthenticatedAuthService(),
 		auditService:    newTestAuditService(),
 	}
 

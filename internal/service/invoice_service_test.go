@@ -48,6 +48,12 @@ func (m *mockInvoiceRepo) GetTotalOutstanding() (int64, error) { return m.totalO
 func (m *mockInvoiceRepo) GetRevenueByDateRange(startDate, endDate string) (int64, error) {
 	return 0, nil
 }
+func (m *mockInvoiceRepo) GetTotalInvoicedByDateRange(startDate, endDate string) (int64, error) {
+	return 0, nil
+}
+func (m *mockInvoiceRepo) GetOutstandingByDateRange(startDate, endDate string) (int64, error) {
+	return 0, nil
+}
 
 type mockInvoiceItemRepo struct{}
 
@@ -112,7 +118,8 @@ func (m *mockPatientRepo) FindByPhone(phone string) (*models.Patient, error) {
 	}
 	return nil, utils.ErrNotFound
 }
-func (m *mockPatientRepo) Count() (int64, error) { return int64(len(m.patients)), nil }
+func (m *mockPatientRepo) Count() (int64, error)                      { return int64(len(m.patients)), nil }
+func (m *mockPatientRepo) CountSince(sinceDate string) (int64, error) { return 0, nil }
 
 type mockTreatmentRepo struct {
 	treatments map[string]*models.Treatment

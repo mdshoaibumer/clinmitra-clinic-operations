@@ -2,8 +2,10 @@ package utils
 
 import (
 	"fmt"
+	"net/mail"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var phoneRegex = regexp.MustCompile(`^[6-9]\d{9}$`)
@@ -83,4 +85,104 @@ func CleanPhone(phone string) string {
 	cleaned = strings.ReplaceAll(cleaned, "-", "")
 	cleaned = stripIndianPrefix(cleaned)
 	return cleaned
+}
+
+// ValidateDate validates a date string matches YYYY-MM-DD format and is a real date.
+func ValidateDate(field, value string) error {
+	if value == "" {
+		return nil // empty dates are allowed (optional field)
+	}
+	if _, err := time.Parse("2006-01-02", value); err != nil {
+		return ValidationError(fmt.Sprintf("%s must be a valid date (YYYY-MM-DD)", field))
+	}
+	return nil
+}
+
+// ValidateTime validates a time string matches HH:MM format.
+func ValidateTime(field, value string) error {
+	if value == "" {
+		return nil
+	}
+	if _, err := time.Parse("15:04", value); err != nil {
+		return ValidationError(fmt.Sprintf("%s must be a valid time (HH:MM)", field))
+	}
+	return nil
+}
+
+// ValidateEmail validates an email address format. Empty values are allowed.
+func ValidateEmail(field, value string) error {
+	if value == "" {
+		return nil
+	}
+	if _, err := mail.ParseAddress(value); err != nil {
+		return ValidationError(fmt.Sprintf("%s must be a valid email address", field))
+	}
+	return nil
+}
+
+// ValidateEnum checks that a value is one of the allowed values. Empty values are allowed.
+func ValidateEnum(field, value string, allowed []string) error {
+	if value == "" {
+		return nil
+	}
+	for _, a := range allowed {
+		if value == a {
+			return nil
+		}
+	}
+	return ValidationError(fmt.Sprintf("%s must be one of: %s", field, strings.Join(allowed, ", ")))
+}
+
+// ValidateNonNegativeAmount returns a validation error if the amount is negative.
+func ValidateNonNegativeAmount(field string, amount int64) error {
+	if amount < 0 {
+		return ValidationError(fmt.Sprintf("%s must not be negative", field))
+	}
+	return nil
+}
+
+// ValidateRange returns a validation error if the value is outside [min, max].
+func ValidateRange(field string, value, min, max float64) error {
+	if value < min || value > max {
+		return ValidationError(fmt.Sprintf("%s must be between %.0f and %.0f", field, min, max))
+	}
+	return nil
+}
+
+// ValidatePassword enforces password complexity rules:
+// - Minimum 8 characters
+// - At least one uppercase letter
+// - At least one lowercase letter
+// - At least one digit
+// - Maximum 128 characters
+func ValidatePassword(password string) error {
+	if len(password) < 8 {
+		return ValidationError("Password must be at least 8 characters")
+	}
+	if len(password) > 128 {
+		return ValidationError("Password must not exceed 128 characters")
+	}
+
+	var hasUpper, hasLower, hasDigit bool
+	for _, ch := range password {
+		switch {
+		case ch >= 'A' && ch <= 'Z':
+			hasUpper = true
+		case ch >= 'a' && ch <= 'z':
+			hasLower = true
+		case ch >= '0' && ch <= '9':
+			hasDigit = true
+		}
+	}
+
+	if !hasUpper {
+		return ValidationError("Password must contain at least one uppercase letter")
+	}
+	if !hasLower {
+		return ValidationError("Password must contain at least one lowercase letter")
+	}
+	if !hasDigit {
+		return ValidationError("Password must contain at least one digit")
+	}
+	return nil
 }

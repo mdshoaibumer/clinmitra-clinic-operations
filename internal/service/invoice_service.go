@@ -92,11 +92,27 @@ func NewInvoiceService(
 // discount, GST (if enabled), and total. Creates patient treatment records
 // for each item with a TreatmentID. All operations run inside a transaction.
 func (s *InvoiceService) CreateInvoice(input CreateInvoiceInput) (*models.Invoice, error) {
+	if err := s.authService.RequireAuth(); err != nil {
+		return nil, err
+	}
+
 	if err := utils.ValidateRequired("Patient", input.PatientID); err != nil {
 		return nil, err
 	}
 	if len(input.Items) == 0 {
 		return nil, utils.ValidationError("At least one item is required")
+	}
+
+	// Validate discount percent range
+	if input.DiscountPercent < 0 || input.DiscountPercent > 100 {
+		return nil, utils.ValidationError("Discount percent must be between 0 and 100")
+	}
+
+	// Validate item unit prices
+	for i, item := range input.Items {
+		if item.UnitPrice <= 0 {
+			return nil, utils.ValidationError(fmt.Sprintf("Item %d: unit price must be a positive amount", i+1))
+		}
 	}
 
 	// Verify patient
@@ -107,7 +123,8 @@ func (s *InvoiceService) CreateInvoice(input CreateInvoiceInput) (*models.Invoic
 	// Get clinic settings for GST and prefix
 	settings, err := s.clinicRepo.Get()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get clinic settings: %w", err)
+		slog.Error("failed to get clinic settings", "error", err)
+		return nil, utils.InternalError("Failed to load clinic settings")
 	}
 
 	// Calculate totals
@@ -180,7 +197,8 @@ func (s *InvoiceService) CreateInvoice(input CreateInvoiceInput) (*models.Invoic
 		// Generate invoice number inside transaction for race safety
 		invoiceNumber, err := s.generateInvoiceNumber(settings.InvoicePrefix)
 		if err != nil {
-			return fmt.Errorf("failed to generate invoice number: %w", err)
+			slog.Error("failed to generate invoice number", "error", err)
+			return utils.InternalError("Failed to generate invoice number")
 		}
 
 		invoice = &models.Invoice{
@@ -296,10 +314,25 @@ func (s *InvoiceService) ListInvoices(page, pageSize int, status, startDate, end
 // The balance check and update are performed inside a single transaction to
 // prevent overpayment from concurrent requests.
 func (s *InvoiceService) RecordPayment(input RecordPaymentInput) (*models.Payment, error) {
+	if err := s.authService.RequireAuth(); err != nil {
+		return nil, err
+	}
+
 	if err := utils.ValidateRequired("Invoice", input.InvoiceID); err != nil {
 		return nil, err
 	}
 	if err := utils.ValidatePositiveAmount("Payment amount", input.Amount); err != nil {
+		return nil, err
+	}
+
+	// Validate payment method
+	validMethods := []string{string(models.PaymentCash), string(models.PaymentUPI), string(models.PaymentCard), string(models.PaymentTransfer), string(models.PaymentOther)}
+	if err := utils.ValidateEnum("Payment method", input.Method, validMethods); err != nil {
+		return nil, err
+	}
+
+	// Validate payment date format if provided
+	if err := utils.ValidateDate("Payment date", input.PaymentDate); err != nil {
 		return nil, err
 	}
 
@@ -354,7 +387,7 @@ func (s *InvoiceService) RecordPayment(input RecordPaymentInput) (*models.Paymen
 			invoice.Status = models.InvoicePartial
 		}
 
-		return tx.Model(invoice).Updates(map[string]interface{}{
+		return tx.Model(invoice).Updates(map[string]any{
 			"paid_amount":    invoice.PaidAmount,
 			"balance_amount": invoice.BalanceAmount,
 			"status":         invoice.Status,
@@ -408,20 +441,20 @@ func (s *InvoiceService) VoidInvoice(id, reason string) error {
 	invoice.VoidReason = reason
 	invoice.BalanceAmount = 0
 
-	err = s.db.Model(invoice).Updates(map[string]interface{}{
-		"status":         invoice.Status,
-		"void_reason":    invoice.VoidReason,
-		"balance_amount": invoice.BalanceAmount,
-	}).Error
-	if err != nil {
-		return err
-	}
-
-	s.auditService.LogAction(s.authService.GetCurrentUserID(), models.AuditUpdate, "invoice", id, nil, map[string]string{
-		"action": "void",
-		"reason": reason,
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(invoice).Updates(map[string]any{
+			"status":         invoice.Status,
+			"void_reason":    invoice.VoidReason,
+			"balance_amount": invoice.BalanceAmount,
+		}).Error; err != nil {
+			return err
+		}
+		return s.auditService.LogActionTx(tx, s.authService.GetCurrentUserID(), models.AuditUpdate, "invoice", id, nil, map[string]string{
+			"action": "void",
+			"reason": reason,
+		})
 	})
-	return nil
+	return err
 }
 
 // GetPatientOutstanding returns the total unpaid balance across all invoices

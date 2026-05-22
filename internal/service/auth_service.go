@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -113,7 +114,8 @@ func (s *AuthService) Login(username, password string) (*AuthResponse, error) {
 
 	session, err := s.sessionManager.CreateSession(user)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create session: %w", err)
+		slog.Error("failed to create session", "userId", user.ID, "error", err)
+		return nil, utils.InternalError("Failed to create session")
 	}
 
 	s.mu.Lock()
@@ -198,11 +200,8 @@ func (s *AuthService) ChangePassword(oldPassword, newPassword string) error {
 		return utils.ErrUnauthorized
 	}
 
-	if len(newPassword) < 6 {
-		return utils.ValidationError("Password must be at least 6 characters")
-	}
-	if len(newPassword) > 128 {
-		return utils.ValidationError("Password must not exceed 128 characters")
+	if err := utils.ValidatePassword(newPassword); err != nil {
+		return err
 	}
 
 	user, err := s.userRepo.FindByID(session.UserID)
@@ -216,7 +215,8 @@ func (s *AuthService) ChangePassword(oldPassword, newPassword string) error {
 
 	hash, err := auth.HashPassword(newPassword, s.cfg.BcryptCost)
 	if err != nil {
-		return fmt.Errorf("failed to hash password: %w", err)
+		slog.Error("failed to hash password", "error", err)
+		return utils.InternalError("Failed to update password")
 	}
 
 	user.PasswordHash = hash
@@ -245,7 +245,7 @@ func (s *AuthService) CreateInitialAdmin(username, password, fullName string) er
 	if err := utils.ValidateMinLength("Username", username, 3); err != nil {
 		return err
 	}
-	if err := utils.ValidateMinLength("Password", password, 6); err != nil {
+	if err := utils.ValidatePassword(password); err != nil {
 		return err
 	}
 	if err := utils.ValidateRequired("Full name", fullName); err != nil {
@@ -254,7 +254,8 @@ func (s *AuthService) CreateInitialAdmin(username, password, fullName string) er
 
 	hash, err := auth.HashPassword(password, s.cfg.BcryptCost)
 	if err != nil {
-		return fmt.Errorf("failed to hash password: %w", err)
+		slog.Error("failed to hash password", "error", err)
+		return utils.InternalError("Failed to create admin account")
 	}
 
 	now := time.Now()

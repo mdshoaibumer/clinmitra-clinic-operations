@@ -114,9 +114,9 @@ func createTestUser(repo *mockUserRepoForAuth, username, password string, role m
 
 func TestAuthService_Login_Success(t *testing.T) {
 	svc, repo := newTestAuthServiceWithDir(t.TempDir())
-	createTestUser(repo, "admin", "password123", models.RoleAdmin, true)
+	createTestUser(repo, "admin", "Password1", models.RoleAdmin, true)
 
-	resp, err := svc.Login("admin", "password123")
+	resp, err := svc.Login("admin", "Password1")
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -133,7 +133,7 @@ func TestAuthService_Login_Success(t *testing.T) {
 
 func TestAuthService_Login_WrongPassword(t *testing.T) {
 	svc, repo := newTestAuthServiceWithDir(t.TempDir())
-	createTestUser(repo, "admin", "password123", models.RoleAdmin, true)
+	createTestUser(repo, "admin", "Password1", models.RoleAdmin, true)
 
 	_, err := svc.Login("admin", "wrongpass")
 	if err == nil {
@@ -167,9 +167,9 @@ func TestAuthService_Login_UserNotFound(t *testing.T) {
 
 func TestAuthService_Login_InactiveUser(t *testing.T) {
 	svc, repo := newTestAuthServiceWithDir(t.TempDir())
-	createTestUser(repo, "inactive", "password123", models.RoleAdmin, false)
+	createTestUser(repo, "inactive", "Password1", models.RoleAdmin, false)
 
-	_, err := svc.Login("inactive", "password123")
+	_, err := svc.Login("inactive", "Password1")
 	if err == nil {
 		t.Fatal("expected error for inactive user")
 	}
@@ -184,7 +184,7 @@ func TestAuthService_Login_InactiveUser(t *testing.T) {
 
 func TestAuthService_Login_AccountLocked(t *testing.T) {
 	svc, repo := newTestAuthServiceWithDir(t.TempDir())
-	createTestUser(repo, "admin", "password123", models.RoleAdmin, true)
+	createTestUser(repo, "admin", "Password1", models.RoleAdmin, true)
 
 	// Exhaust login attempts
 	for i := 0; i < 5; i++ {
@@ -192,7 +192,7 @@ func TestAuthService_Login_AccountLocked(t *testing.T) {
 	}
 
 	// Next attempt should be locked
-	_, err := svc.Login("admin", "password123")
+	_, err := svc.Login("admin", "Password1")
 	if err == nil {
 		t.Fatal("expected error for locked account")
 	}
@@ -228,7 +228,7 @@ func TestAuthService_Login_OversizedInput(t *testing.T) {
 
 func TestAuthService_Login_ResetsAttemptsOnSuccess(t *testing.T) {
 	svc, repo := newTestAuthServiceWithDir(t.TempDir())
-	createTestUser(repo, "admin", "password123", models.RoleAdmin, true)
+	createTestUser(repo, "admin", "Password1", models.RoleAdmin, true)
 
 	// Fail a few times
 	for i := 0; i < 3; i++ {
@@ -236,7 +236,7 @@ func TestAuthService_Login_ResetsAttemptsOnSuccess(t *testing.T) {
 	}
 
 	// Succeed
-	resp, err := svc.Login("admin", "password123")
+	resp, err := svc.Login("admin", "Password1")
 	if err != nil {
 		t.Fatalf("expected success, got: %v", err)
 	}
@@ -249,7 +249,7 @@ func TestAuthService_Login_ResetsAttemptsOnSuccess(t *testing.T) {
 		svc.Login("admin", "wrongpass")
 	}
 	// 4th attempt should still work (not locked, only 4 failures)
-	resp, err = svc.Login("admin", "password123")
+	resp, err = svc.Login("admin", "Password1")
 	if err != nil {
 		t.Fatalf("expected success after reset, got: %v", err)
 	}
@@ -262,10 +262,10 @@ func TestAuthService_Login_ResetsAttemptsOnSuccess(t *testing.T) {
 
 func TestAuthService_Logout_WithSession(t *testing.T) {
 	svc, repo := newTestAuthServiceWithDir(t.TempDir())
-	createTestUser(repo, "admin", "password123", models.RoleAdmin, true)
+	createTestUser(repo, "admin", "Password1", models.RoleAdmin, true)
 
 	// Login first
-	svc.Login("admin", "password123")
+	svc.Login("admin", "Password1")
 	if !svc.IsAuthenticated() {
 		t.Fatal("expected authenticated after login")
 	}
@@ -326,18 +326,18 @@ func TestAuthService_GetCurrentUser_ValidSession(t *testing.T) {
 
 func TestAuthService_ChangePassword_Success(t *testing.T) {
 	svc, repo := newTestAuthServiceWithDir(t.TempDir())
-	createTestUser(repo, "admin", "oldpass12", models.RoleAdmin, true)
+	createTestUser(repo, "admin", "OldPass12", models.RoleAdmin, true)
 
-	svc.Login("admin", "oldpass12")
+	svc.Login("admin", "OldPass12")
 
-	err := svc.ChangePassword("oldpass12", "newpass12")
+	err := svc.ChangePassword("OldPass12", "NewPass12")
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
 
 	// Logout and login with new password
 	svc.Logout()
-	resp, err := svc.Login("admin", "newpass12")
+	resp, err := svc.Login("admin", "NewPass12")
 	if err != nil {
 		t.Fatalf("expected login with new password, got: %v", err)
 	}
@@ -352,7 +352,7 @@ func TestAuthService_ChangePassword_WrongOldPassword(t *testing.T) {
 
 	svc.Login("admin", "correct1")
 
-	err := svc.ChangePassword("wrongold1", "newpass12")
+	err := svc.ChangePassword("WrongOld1", "NewPass12")
 	if err == nil {
 		t.Fatal("expected error for wrong old password")
 	}
@@ -403,7 +403,7 @@ func TestAuthService_ChangePassword_TooLong(t *testing.T) {
 func TestAuthService_ChangePassword_NoSession(t *testing.T) {
 	svc, _ := newTestAuthServiceWithDir(t.TempDir())
 
-	err := svc.ChangePassword("old", "newpass12")
+	err := svc.ChangePassword("old", "NewPass12")
 	if err == nil {
 		t.Fatal("expected error with no session")
 	}
@@ -421,7 +421,7 @@ func TestAuthService_ChangePassword_NoSession(t *testing.T) {
 func TestAuthService_CreateInitialAdmin_Success(t *testing.T) {
 	svc, repo := newTestAuthServiceWithDir(t.TempDir())
 
-	err := svc.CreateInitialAdmin("admin", "password123", "Dr. Admin")
+	err := svc.CreateInitialAdmin("admin", "Password1", "Dr. Admin")
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -446,7 +446,7 @@ func TestAuthService_CreateInitialAdmin_AlreadySetup(t *testing.T) {
 	svc, repo := newTestAuthServiceWithDir(t.TempDir())
 	createTestUser(repo, "existing", "pass1234", models.RoleAdmin, true)
 
-	err := svc.CreateInitialAdmin("admin2", "password123", "Dr. Admin")
+	err := svc.CreateInitialAdmin("admin2", "Password1", "Dr. Admin")
 	if err == nil {
 		t.Fatal("expected error when users already exist")
 	}
@@ -466,10 +466,10 @@ func TestAuthService_CreateInitialAdmin_ValidationErrors(t *testing.T) {
 		password string
 		fullName string
 	}{
-		{"short username", "ab", "password123", "Admin"},
+		{"short username", "ab", "Password1", "Admin"},
 		{"short password", "admin", "12345", "Admin"},
-		{"empty full name", "admin", "password123", ""},
-		{"whitespace full name", "admin", "password123", "   "},
+		{"empty full name", "admin", "Password1", ""},
+		{"whitespace full name", "admin", "Password1", "   "},
 	}
 
 	for _, tc := range tests {

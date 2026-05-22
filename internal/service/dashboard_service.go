@@ -1,7 +1,7 @@
 package service
 
 import (
-	"fmt"
+	"log/slog"
 	"time"
 
 	"clinmitra/internal/repository"
@@ -78,27 +78,38 @@ func (s *DashboardService) GetDashboardStats() (*DashboardStats, error) {
 
 	todayAppointments, err := s.appointmentRepo.CountByDate(today)
 	if err != nil {
-		return nil, fmt.Errorf("dashboard stats failed: %w", err)
+		slog.Error("dashboard stats failed", "query", "todayAppointments", "error", err)
+		return nil, utils.InternalError("Failed to load dashboard statistics")
 	}
 
 	totalPatients, err := s.patientRepo.Count()
 	if err != nil {
-		return nil, fmt.Errorf("dashboard stats failed: %w", err)
+		slog.Error("dashboard stats failed", "query", "totalPatients", "error", err)
+		return nil, utils.InternalError("Failed to load dashboard statistics")
 	}
 
 	todayRevenue, err := s.paymentRepo.GetCollectionByDate(today)
 	if err != nil {
-		return nil, fmt.Errorf("dashboard stats failed: %w", err)
+		slog.Error("dashboard stats failed", "query", "todayRevenue", "error", err)
+		return nil, utils.InternalError("Failed to load dashboard statistics")
 	}
 
 	monthRevenue, err := s.paymentRepo.GetCollectionByDateRange(monthStart, today)
 	if err != nil {
-		return nil, fmt.Errorf("dashboard stats failed: %w", err)
+		slog.Error("dashboard stats failed", "query", "monthRevenue", "error", err)
+		return nil, utils.InternalError("Failed to load dashboard statistics")
 	}
 
 	totalOutstanding, err := s.invoiceRepo.GetTotalOutstanding()
 	if err != nil {
-		return nil, fmt.Errorf("dashboard stats failed: %w", err)
+		slog.Error("dashboard stats failed", "query", "totalOutstanding", "error", err)
+		return nil, utils.InternalError("Failed to load dashboard statistics")
+	}
+
+	patientsThisMonth, err := s.patientRepo.CountSince(monthStart)
+	if err != nil {
+		slog.Error("dashboard stats failed", "query", "patientsThisMonth", "error", err)
+		return nil, utils.InternalError("Failed to load dashboard statistics")
 	}
 
 	return &DashboardStats{
@@ -107,6 +118,7 @@ func (s *DashboardService) GetDashboardStats() (*DashboardStats, error) {
 		TodayRevenue:      todayRevenue,
 		MonthRevenue:      monthRevenue,
 		TotalOutstanding:  totalOutstanding,
+		PatientsThisMonth: patientsThisMonth,
 	}, nil
 }
 
@@ -144,7 +156,7 @@ func (s *DashboardService) GetDailyReport(date string) (*DailyReport, error) {
 	}, nil
 }
 
-// GetMonthlyReport returns revenue and outstanding totals for a given month.
+// GetMonthlyReport returns revenue, invoiced, and outstanding totals for a given month.
 func (s *DashboardService) GetMonthlyReport(year, month int) (*MonthlyReport, error) {
 	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.Local).Format("2006-01-02")
 	endDate := time.Date(year, time.Month(month+1), 0, 0, 0, 0, 0, time.Local).Format("2006-01-02")
@@ -154,7 +166,12 @@ func (s *DashboardService) GetMonthlyReport(year, month int) (*MonthlyReport, er
 		return nil, err
 	}
 
-	outstanding, err := s.invoiceRepo.GetTotalOutstanding()
+	totalInvoiced, err := s.invoiceRepo.GetTotalInvoicedByDateRange(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	outstanding, err := s.invoiceRepo.GetOutstandingByDateRange(startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
@@ -163,6 +180,7 @@ func (s *DashboardService) GetMonthlyReport(year, month int) (*MonthlyReport, er
 		Year:             year,
 		Month:            month,
 		TotalRevenue:     revenue,
+		TotalInvoiced:    totalInvoiced,
 		TotalOutstanding: outstanding,
 	}, nil
 }

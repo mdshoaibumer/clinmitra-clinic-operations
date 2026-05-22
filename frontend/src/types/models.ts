@@ -35,6 +35,9 @@ export interface ClinicSettings {
   bankName: string
   ifscCode: string
   upiId: string
+  whatsAppEnabled: boolean
+  whatsAppWelcomeTemplate: string
+  whatsAppInvoiceTemplate: string
   createdAt: number
   updatedAt: number
 }

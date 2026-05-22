@@ -27,6 +27,10 @@ type ClinicSettings struct {
 	BankName            string `gorm:"type:text" json:"bankName"`
 	IFSCCode            string `gorm:"type:text" json:"ifscCode"`
 	UPIID               string `gorm:"type:text" json:"upiId"`
-	CreatedAt           int64  `gorm:"autoCreateTime" json:"createdAt"`
-	UpdatedAt           int64  `gorm:"autoUpdateTime" json:"updatedAt"`
+	// WhatsApp messaging
+	WhatsAppEnabled         bool   `gorm:"default:true" json:"whatsAppEnabled"`
+	WhatsAppWelcomeTemplate string `gorm:"type:text" json:"whatsAppWelcomeTemplate"`
+	WhatsAppInvoiceTemplate string `gorm:"type:text" json:"whatsAppInvoiceTemplate"`
+	CreatedAt               int64  `gorm:"autoCreateTime" json:"createdAt"`
+	UpdatedAt               int64  `gorm:"autoUpdateTime" json:"updatedAt"`
 }

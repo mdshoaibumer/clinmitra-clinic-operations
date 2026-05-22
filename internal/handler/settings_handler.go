@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"fmt"
 	"log/slog"
 
 	"clinmitra/internal/models"
 	"clinmitra/internal/service"
+	"clinmitra/internal/utils"
 )
 
 // MaxLogoSize is the maximum allowed size for a logo in bytes (512KB).
@@ -47,7 +47,14 @@ func (h *SettingsHandler) GetClinicSettings() (*models.ClinicSettings, error) {
 
 // UpdateClinicSettings persists updated clinic settings.
 func (h *SettingsHandler) UpdateClinicSettings(settings *models.ClinicSettings) error {
-	return safeError(h.settingsService.UpdateClinicSettings(settings))
+	slog.Info("updating clinic settings", "id", settings.ID)
+	err := h.settingsService.UpdateClinicSettings(settings)
+	if err != nil {
+		slog.Warn("update clinic settings failed", "error", err.Error())
+		return safeError(err)
+	}
+	slog.Info("clinic settings updated", "id", settings.ID)
+	return nil
 }
 
 // ListTreatments returns all active treatments available for invoicing.
@@ -103,16 +110,23 @@ func (h *SettingsHandler) DeleteTreatment(id string) error {
 // Maximum size: 512KB of raw data.
 func (h *SettingsHandler) UploadLogo(base64Data string) error {
 	if len(base64Data) == 0 {
-		return safeError(fmt.Errorf("no logo data provided"))
+		return safeError(utils.ValidationError("No logo data provided"))
 	}
 	// Base64 is ~4/3 of original size; 512KB raw ≈ 700KB base64
 	if len(base64Data) > MaxLogoSize*2 {
-		return safeError(fmt.Errorf("logo file too large (max 512KB)"))
+		return safeError(utils.ValidationError("Logo file too large (max 512KB)"))
 	}
 	return safeError(h.settingsService.SaveLogo(base64Data))
 }
 
 // RemoveLogo clears the clinic logo from settings.
 func (h *SettingsHandler) RemoveLogo() error {
-	return safeError(h.settingsService.RemoveLogo())
+	slog.Info("removing clinic logo")
+	err := h.settingsService.RemoveLogo()
+	if err != nil {
+		slog.Warn("remove logo failed", "error", err.Error())
+		return safeError(err)
+	}
+	slog.Info("clinic logo removed")
+	return nil
 }

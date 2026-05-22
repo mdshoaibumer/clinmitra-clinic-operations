@@ -11,11 +11,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import PatientAvatar from '@/components/PatientAvatar'
+import WhatsAppDialog from '@/components/WhatsAppDialog'
 import { Plus, Search, Download } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import PageTransition from '@/components/PageTransition'
 import { PatientListSkeleton } from '@/components/ui/skeletons'
+import type { WhatsAppMessageResult } from '@/types/api'
 
 export default function Patients() {
   const navigate = useNavigate()
@@ -29,6 +31,8 @@ export default function Patients() {
   const debouncedSearch = useDebounce(localSearch, 300)
   const [page, setPage] = useState(1)
   const [selectedState, setSelectedState] = useState('')
+  const [whatsAppOpen, setWhatsAppOpen] = useState(false)
+  const [whatsAppMessage, setWhatsAppMessage] = useState<WhatsAppMessageResult | null>(null)
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<PatientFormData>({
     resolver: zodResolver(patientSchema),
@@ -57,7 +61,7 @@ export default function Patients() {
   // Mutation for creating a patient
   const createPatientMutation = useMutation({
     mutationFn: (data: any) => window.go.handler.PatientHandler.CreatePatient(data),
-    onSuccess: () => {
+    onSuccess: async (patient) => {
       queryClient.invalidateQueries({ queryKey: ['patients'] })
       queryClient.invalidateQueries({ queryKey: ['dashboardStats'] })
       reset()
@@ -66,6 +70,17 @@ export default function Patients() {
         title: "Patient Created",
         description: "Patient registered successfully.",
       })
+      // Prepare WhatsApp welcome message
+      try {
+        const templates = await window.go.handler.WhatsAppHandler.GetWhatsAppTemplates()
+        if (templates.enabled) {
+          const result = await window.go.handler.WhatsAppHandler.PrepareWelcomeMessage(patient)
+          setWhatsAppMessage(result)
+          setWhatsAppOpen(true)
+        }
+      } catch (err) {
+        console.error('WhatsApp message preparation failed:', err)
+      }
     },
     onError: (err: any) => {
       const message = typeof err === 'string' ? err : err.message || 'Failed to create patient'
@@ -144,6 +159,7 @@ export default function Patients() {
   }
 
   return (
+    <>
     <PageTransition className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Patients</h1>
@@ -340,5 +356,12 @@ export default function Patients() {
         </div>
       )}
     </PageTransition>
+    <WhatsAppDialog
+      isOpen={whatsAppOpen}
+      onClose={() => { setWhatsAppOpen(false); setWhatsAppMessage(null) }}
+      messageResult={whatsAppMessage}
+      title="Send Welcome Message"
+    />
+    </>
   )
 }

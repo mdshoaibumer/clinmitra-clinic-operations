@@ -31,6 +31,7 @@ type Application struct {
 	DashboardHandler   *handler.DashboardHandler
 	BackupHandler      *handler.BackupHandler
 	UpdateHandler      *handler.UpdateHandler
+	WhatsAppHandler    *handler.WhatsAppHandler
 
 	// Services (for shutdown hooks)
 	backupService *service.BackupService
@@ -110,6 +111,7 @@ func NewApplication() (*Application, error) {
 	dashboardService := service.NewDashboardService(invoiceRepo, paymentRepo, appointmentRepo, patientRepo)
 	backupService := service.NewBackupService(database, cfg, authService, auditService, clinicRepo)
 	updateService := service.NewUpdateService(cfg)
+	whatsappService := service.NewWhatsAppService(clinicRepo)
 
 	// Initialize handlers
 	app := &Application{
@@ -124,6 +126,7 @@ func NewApplication() (*Application, error) {
 		DashboardHandler:   handler.NewDashboardHandler(dashboardService),
 		BackupHandler:      handler.NewBackupHandler(backupService),
 		UpdateHandler:      handler.NewUpdateHandler(updateService),
+		WhatsAppHandler:    handler.NewWhatsAppHandler(whatsappService, invoiceService),
 		backupService:      backupService,
 	}
 
@@ -134,6 +137,7 @@ func NewApplication() (*Application, error) {
 // It stores the context for runtime access and logs the startup event.
 func (a *Application) Startup(ctx context.Context) {
 	a.ctx = ctx
+	a.WhatsAppHandler.SetContext(ctx)
 	slog.Info("application started", "version", a.cfg.Version, "app", a.cfg.AppName)
 }
 
@@ -161,8 +165,8 @@ func (a *Application) Shutdown(ctx context.Context) {
 
 // GetBindings returns the list of handler structs to be bound to the
 // Wails frontend via JavaScript/TypeScript bindings.
-func (a *Application) GetBindings() []interface{} {
-	return []interface{}{
+func (a *Application) GetBindings() []any {
+	return []any{
 		a.AuthHandler,
 		a.SettingsHandler,
 		a.PatientHandler,
@@ -171,6 +175,7 @@ func (a *Application) GetBindings() []interface{} {
 		a.DashboardHandler,
 		a.BackupHandler,
 		a.UpdateHandler,
+		a.WhatsAppHandler,
 	}
 }
 

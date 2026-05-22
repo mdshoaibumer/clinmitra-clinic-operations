@@ -363,6 +363,29 @@ if (typeof window !== 'undefined') {
       ],
       CreateCloudBackup: async () => ({ fileName: 'clinmitra_backup_cloud.db', filePath: 'G:\\My Drive\\ClinMitra Backups\\clinmitra_backup_cloud.db', size: 1024000, createdAt: new Date().toISOString() }),
     },
+    WhatsAppHandler: {
+      GetWhatsAppTemplates: async () => ({
+        welcomeTemplate: 'Hello {{patient_name}}! Welcome to {{clinic_name}}. Dr. {{doctor_name}} and our team look forward to caring for you. Call us at {{clinic_phone}}.',
+        invoiceTemplate: 'Hi {{patient_name}}, your invoice {{invoice_number}} dated {{invoice_date}}: Total ₹{{total_amount}}, Paid ₹{{paid_amount}}, Balance ₹{{balance_amount}}. Method: {{payment_method}}. Thank you!',
+        enabled: true,
+      }),
+      PrepareWelcomeMessage: async (patient: { name: string; phone: string }) => ({
+        phone: '91' + patient.phone.replace(/\D/g, '').slice(-10),
+        message: `Hello ${patient.name}! Welcome to Mock Clinic. Dr. Mock and our team look forward to caring for you.`,
+        whatsAppUrl: `whatsapp://send?phone=91${patient.phone.replace(/\D/g, '').slice(-10)}&text=Hello+${encodeURIComponent(patient.name)}`,
+        webUrl: `https://wa.me/91${patient.phone.replace(/\D/g, '').slice(-10)}?text=Hello+${encodeURIComponent(patient.name)}`,
+        isDesktopPresent: false,
+      }),
+      PrepareInvoiceMessage: async (invoiceID: string, paymentMethod: string) => ({
+        phone: '919876543210',
+        message: `Hi Patient, invoice ${invoiceID}: Total ₹1000.00. Method: ${paymentMethod}. Thank you!`,
+        whatsAppUrl: `whatsapp://send?phone=919876543210&text=Invoice`,
+        webUrl: `https://wa.me/919876543210?text=Invoice`,
+        isDesktopPresent: false,
+      }),
+      IsWhatsAppInstalled: async () => false,
+      SendViaWhatsApp: async (_url: string) => { console.log('Mock: Would open WhatsApp URL'); },
+    },
   };
 
   (w.go as Record<string, unknown>).handler = handlers;

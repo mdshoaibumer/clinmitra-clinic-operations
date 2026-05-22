@@ -24,6 +24,15 @@ func (r *auditRepo) Create(log *models.AuditLog) error {
 	return r.db.Create(log).Error
 }
 
+// CreateTx persists a new AuditLog entry within an existing transaction.
+// Use this for critical operations where audit must succeed atomically.
+func (r *auditRepo) CreateTx(tx *gorm.DB, log *models.AuditLog) error {
+	if log.ID == "" {
+		log.ID = uuid.New().String()
+	}
+	return tx.Create(log).Error
+}
+
 // ListByEntity returns all audit entries for a specific entity (type+ID),
 // ordered newest first.
 func (r *auditRepo) ListByEntity(entityType, entityID string) ([]models.AuditLog, error) {

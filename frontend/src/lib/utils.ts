@@ -53,9 +53,14 @@ export function getTodayDate(): string {
   return new Date().toISOString().split('T')[0]
 }
 
-// Convert rupees (input) to paise for storage
+// Convert rupees (input) to paise for storage.
+// Uses string-based parsing to avoid floating-point precision errors
+// (e.g., 19.99 * 100 = 1998.9999... in IEEE 754).
 export function rupeesToPaise(rupees: number): number {
-  return Math.round(rupees * 100)
+  const str = rupees.toFixed(2)
+  const [whole, frac = '00'] = str.split('.')
+  const paddedFrac = (frac + '00').slice(0, 2)
+  return parseInt(whole, 10) * 100 + parseInt(paddedFrac, 10) * (whole.startsWith('-') ? -1 : 1)
 }
 
 // Convert paise to rupees for display in inputs

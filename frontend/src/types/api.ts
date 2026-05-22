@@ -134,3 +134,17 @@ export interface CloudDriveInfo {
   path: string
   available: boolean
 }
+
+export interface WhatsAppTemplates {
+  welcomeTemplate: string
+  invoiceTemplate: string
+  enabled: boolean
+}
+
+export interface WhatsAppMessageResult {
+  phone: string
+  message: string
+  whatsAppUrl: string
+  webUrl: string
+  isDesktopPresent: boolean
+}

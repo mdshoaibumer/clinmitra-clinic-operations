@@ -50,10 +50,25 @@ func NewAppointmentService(
 	}
 }
 
+// saveAppointment persists appointment changes in a transaction when db is
+// available, or falls back to the repository directly (for unit tests).
+func (s *AppointmentService) saveAppointment(appointment *models.Appointment) error {
+	if s.db != nil {
+		return s.db.Transaction(func(tx *gorm.DB) error {
+			return tx.Save(appointment).Error
+		})
+	}
+	return s.appointmentRepo.Update(appointment)
+}
+
 // CreateAppointment validates input, checks for time-slot conflicts, and
 // persists a new appointment in a database transaction. Logs the action to
 // the audit trail.
 func (s *AppointmentService) CreateAppointment(input CreateAppointmentInput) (*models.Appointment, error) {
+	if err := s.authService.RequireAuth(); err != nil {
+		return nil, err
+	}
+
 	if err := utils.ValidateRequired("Patient", input.PatientID); err != nil {
 		return nil, err
 	}
@@ -65,6 +80,22 @@ func (s *AppointmentService) CreateAppointment(input CreateAppointmentInput) (*m
 	}
 	if err := utils.ValidateRequired("End time", input.EndTime); err != nil {
 		return nil, err
+	}
+
+	// Validate date and time formats
+	if err := utils.ValidateDate("Date", input.Date); err != nil {
+		return nil, err
+	}
+	if err := utils.ValidateTime("Start time", input.StartTime); err != nil {
+		return nil, err
+	}
+	if err := utils.ValidateTime("End time", input.EndTime); err != nil {
+		return nil, err
+	}
+
+	// Ensure start time is before end time
+	if input.StartTime >= input.EndTime {
+		return nil, utils.ValidationError("Start time must be before end time")
 	}
 
 	// Verify patient exists
@@ -120,6 +151,10 @@ func (s *AppointmentService) CreateAppointment(input CreateAppointmentInput) (*m
 // required fields and checking for time-slot conflicts (excluding itself).
 // Only scheduled appointments can be edited.
 func (s *AppointmentService) UpdateAppointment(id string, input CreateAppointmentInput) (*models.Appointment, error) {
+	if err := s.authService.RequireAuth(); err != nil {
+		return nil, err
+	}
+
 	appointment, err := s.appointmentRepo.FindByID(id)
 	if err != nil {
 		return nil, err
@@ -143,6 +178,22 @@ func (s *AppointmentService) UpdateAppointment(id string, input CreateAppointmen
 		return nil, err
 	}
 
+	// Validate date and time formats
+	if err := utils.ValidateDate("Date", input.Date); err != nil {
+		return nil, err
+	}
+	if err := utils.ValidateTime("Start time", input.StartTime); err != nil {
+		return nil, err
+	}
+	if err := utils.ValidateTime("End time", input.EndTime); err != nil {
+		return nil, err
+	}
+
+	// Ensure start time is before end time
+	if input.StartTime >= input.EndTime {
+		return nil, utils.ValidationError("Start time must be before end time")
+	}
+
 	// Check conflicts excluding current appointment
 	conflict, err := s.appointmentRepo.FindConflicting(input.Date, input.StartTime, input.EndTime, id)
 	if err != nil {
@@ -161,7 +212,8 @@ func (s *AppointmentService) UpdateAppointment(id string, input CreateAppointmen
 	appointment.Purpose = input.Purpose
 	appointment.Notes = input.Notes
 
-	if err := s.appointmentRepo.Update(appointment); err != nil {
+	err = s.saveAppointment(appointment)
+	if err != nil {
 		return nil, err
 	}
 
@@ -172,6 +224,10 @@ func (s *AppointmentService) UpdateAppointment(id string, input CreateAppointmen
 // CancelAppointment marks an appointment as cancelled with the given reason.
 // Completed appointments cannot be cancelled.
 func (s *AppointmentService) CancelAppointment(id, reason string) error {
+	if err := s.authService.RequireAuth(); err != nil {
+		return err
+	}
+
 	appointment, err := s.appointmentRepo.FindByID(id)
 	if err != nil {
 		return err
@@ -180,11 +236,14 @@ func (s *AppointmentService) CancelAppointment(id, reason string) error {
 	if appointment.Status == models.AppointmentCompleted {
 		return utils.ValidationError("Cannot cancel a completed appointment")
 	}
+	if appointment.Status == models.AppointmentCancelled {
+		return utils.ValidationError("Appointment is already cancelled")
+	}
 
 	appointment.Status = models.AppointmentCancelled
 	appointment.CancelReason = reason
 
-	if err := s.appointmentRepo.Update(appointment); err != nil {
+	if err := s.saveAppointment(appointment); err != nil {
 		return err
 	}
 
@@ -197,6 +256,10 @@ func (s *AppointmentService) CancelAppointment(id, reason string) error {
 
 // CompleteAppointment transitions a scheduled appointment to completed status.
 func (s *AppointmentService) CompleteAppointment(id string) error {
+	if err := s.authService.RequireAuth(); err != nil {
+		return err
+	}
+
 	appointment, err := s.appointmentRepo.FindByID(id)
 	if err != nil {
 		return err
@@ -208,7 +271,7 @@ func (s *AppointmentService) CompleteAppointment(id string) error {
 
 	appointment.Status = models.AppointmentCompleted
 
-	if err := s.appointmentRepo.Update(appointment); err != nil {
+	if err := s.saveAppointment(appointment); err != nil {
 		return err
 	}
 

@@ -37,3 +37,10 @@ var (
 func ValidationError(message string) *AppError {
 	return &AppError{Code: "VALIDATION_ERROR", Message: message}
 }
+
+// InternalError creates an AppError with code "INTERNAL_ERROR".
+// Use this instead of fmt.Errorf in service layers so all errors flow
+// through the structured AppError pipeline.
+func InternalError(message string) *AppError {
+	return &AppError{Code: "INTERNAL_ERROR", Message: message}
+}

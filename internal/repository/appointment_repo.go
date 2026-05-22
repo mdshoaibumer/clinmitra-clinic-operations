@@ -35,7 +35,7 @@ func (r *appointmentRepo) FindByID(id string) (*models.Appointment, error) {
 // Update saves changed fields on an existing appointment using an explicit
 // column map to ensure zero-value fields (like empty cancel_reason) are persisted.
 func (r *appointmentRepo) Update(appointment *models.Appointment) error {
-	return r.db.Model(appointment).Updates(map[string]interface{}{
+	return r.db.Model(appointment).Updates(map[string]any{
 		"patient_id":       appointment.PatientID,
 		"appointment_date": appointment.AppointmentDate,
 		"start_time":       appointment.StartTime,

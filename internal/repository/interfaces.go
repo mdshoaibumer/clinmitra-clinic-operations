@@ -2,6 +2,8 @@ package repository
 
 import (
 	"clinmitra/internal/models"
+
+	"gorm.io/gorm"
 )
 
 type UserRepository interface {
@@ -27,6 +29,7 @@ type PatientRepository interface {
 	List(page, pageSize int, search string) ([]models.Patient, int64, error)
 	FindByPhone(phone string) (*models.Patient, error)
 	Count() (int64, error)
+	CountSince(sinceDate string) (int64, error)
 }
 
 type TreatmentRepository interface {
@@ -60,6 +63,8 @@ type InvoiceRepository interface {
 	GetOutstandingByPatient(patientID string) (int64, error)
 	GetTotalOutstanding() (int64, error)
 	GetRevenueByDateRange(startDate, endDate string) (int64, error)
+	GetTotalInvoicedByDateRange(startDate, endDate string) (int64, error)
+	GetOutstandingByDateRange(startDate, endDate string) (int64, error)
 }
 
 type InvoiceFilters struct {
@@ -92,6 +97,7 @@ type PatientTreatmentRepository interface {
 
 type AuditRepository interface {
 	Create(log *models.AuditLog) error
+	CreateTx(tx *gorm.DB, log *models.AuditLog) error
 	ListByEntity(entityType, entityID string) ([]models.AuditLog, error)
 	ListByUser(userID string, limit int) ([]models.AuditLog, error)
 	ListRecent(limit int) ([]models.AuditLog, error)

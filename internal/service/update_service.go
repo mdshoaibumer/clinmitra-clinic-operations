@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"clinmitra/internal/config"
+	"clinmitra/internal/utils"
 )
 
 // UpdateInfo holds information about an available update.
@@ -67,7 +69,8 @@ func (s *UpdateService) CheckForUpdate() (*UpdateInfo, error) {
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		slog.Error("failed to create update check request", "error", err)
+		return nil, utils.InternalError("Failed to check for updates")
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 	req.Header.Set("User-Agent", "ClinmitraDental-Updater")
@@ -98,8 +101,9 @@ func (s *UpdateService) CheckForUpdate() (*UpdateInfo, error) {
 	}
 
 	var release GitHubRelease
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return nil, fmt.Errorf("failed to parse release info: %w", err)
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1*1024*1024)).Decode(&release); err != nil {
+		slog.Error("failed to parse release info", "error", err)
+		return nil, utils.InternalError("Failed to parse update information")
 	}
 
 	latestVersion := strings.TrimPrefix(release.TagName, "v")
@@ -131,22 +135,37 @@ func (s *UpdateService) CheckForUpdate() (*UpdateInfo, error) {
 }
 
 // DownloadAndInstallUpdate downloads the installer and launches it.
+// Only allows downloads from the trusted GitHub releases domain.
 func (s *UpdateService) DownloadAndInstallUpdate(downloadURL string) error {
 	if downloadURL == "" {
-		return fmt.Errorf("no download URL provided")
+		return utils.ValidationError("No download URL provided")
+	}
+
+	// Validate that the URL is from the trusted GitHub releases domain
+	if err := validateUpdateURL(downloadURL, s.owner, s.repo); err != nil {
+		return err
 	}
 
 	slog.Info("downloading update", "url", downloadURL)
 
-	// Download to temp directory
-	resp, err := s.httpClient.Do(mustNewRequest("GET", downloadURL))
+	req, err := http.NewRequest("GET", downloadURL, nil)
 	if err != nil {
-		return fmt.Errorf("failed to download update: %w", err)
+		slog.Error("failed to create download request", "error", err)
+		return utils.InternalError("Failed to start download")
+	}
+	req.Header.Set("User-Agent", "ClinmitraDental-Updater")
+
+	// Use a longer timeout for large binary downloads
+	downloadClient := &http.Client{Timeout: 5 * time.Minute}
+	resp, err := downloadClient.Do(req)
+	if err != nil {
+		slog.Error("failed to download update", "error", err)
+		return utils.InternalError("Failed to download update")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("download failed with status: %d", resp.StatusCode)
+		return utils.InternalError("Download failed with unexpected status")
 	}
 
 	// Save installer to temp file
@@ -155,12 +174,14 @@ func (s *UpdateService) DownloadAndInstallUpdate(downloadURL string) error {
 
 	out, err := os.Create(installerPath)
 	if err != nil {
-		return fmt.Errorf("failed to create temp file: %w", err)
+		slog.Error("failed to create temp file", "path", installerPath, "error", err)
+		return utils.InternalError("Failed to save installer")
 	}
 	defer out.Close()
 
-	if _, err := io.Copy(out, resp.Body); err != nil {
-		return fmt.Errorf("failed to save installer: %w", err)
+	if _, err := io.Copy(out, io.LimitReader(resp.Body, 200*1024*1024)); err != nil {
+		slog.Error("failed to save installer", "error", err)
+		return utils.InternalError("Failed to save installer")
 	}
 	out.Close()
 
@@ -169,7 +190,8 @@ func (s *UpdateService) DownloadAndInstallUpdate(downloadURL string) error {
 	// Launch the installer with /SILENT flag (NSIS silent install = shows progress, no prompts)
 	cmd := exec.Command(installerPath, "/SILENT")
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to launch installer: %w", err)
+		slog.Error("failed to launch installer", "path", installerPath, "error", err)
+		return utils.InternalError("Failed to launch installer")
 	}
 
 	// The app will be closed by the installer (NSIS CloseFirst plugin or manual close)
@@ -199,8 +221,27 @@ func parseVersion(v string) [3]int {
 	return parts
 }
 
-func mustNewRequest(method, url string) *http.Request {
-	req, _ := http.NewRequest(method, url, nil)
-	req.Header.Set("User-Agent", "ClinmitraDental-Updater")
-	return req
+// validateUpdateURL ensures the download URL points to the trusted GitHub
+// releases domain for the expected owner/repo. Prevents downloading
+// arbitrary executables from untrusted sources.
+func validateUpdateURL(rawURL, owner, repo string) error {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return utils.ValidationError("Invalid download URL")
+	}
+	if parsed.Scheme != "https" {
+		return utils.ValidationError("Download URL must use HTTPS")
+	}
+	host := strings.ToLower(parsed.Host)
+	if host != "github.com" && host != "objects.githubusercontent.com" {
+		return utils.ValidationError("Download URL must be from github.com")
+	}
+	// For github.com URLs, ensure the path matches the expected owner/repo
+	if host == "github.com" {
+		expectedPrefix := fmt.Sprintf("/%s/%s/", owner, repo)
+		if !strings.HasPrefix(parsed.Path, expectedPrefix) {
+			return utils.ValidationError("Download URL must be from the official repository")
+		}
+	}
+	return nil
 }

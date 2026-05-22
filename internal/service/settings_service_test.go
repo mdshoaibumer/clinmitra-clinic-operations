@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"gorm.io/gorm"
 )
 
 type settingsMockClinicRepo struct {
@@ -52,7 +53,8 @@ func (m *settingsMockTreatmentRepo) ListAll() ([]models.Treatment, error) {
 
 type settingsMockAuditRepo struct{}
 
-func (m *settingsMockAuditRepo) Create(log *models.AuditLog) error { return nil }
+func (m *settingsMockAuditRepo) Create(log *models.AuditLog) error                { return nil }
+func (m *settingsMockAuditRepo) CreateTx(tx *gorm.DB, log *models.AuditLog) error { return nil }
 func (m *settingsMockAuditRepo) ListByEntity(entityType, entityID string) ([]models.AuditLog, error) {
 	return nil, nil
 }

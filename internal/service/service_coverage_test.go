@@ -106,10 +106,10 @@ func setupAndLogin(t *testing.T) (
 		DoctorName:    "Dr. Test",
 		Phone:         "9876543210",
 		AdminUsername: "admin",
-		AdminPassword: "admin123",
+		AdminPassword: "Admin1234",
 		AdminFullName: "Admin User",
 	})
-	authService.Login("admin", "admin123")
+	authService.Login("admin", "Admin1234")
 
 	return authService, patientService, appointmentService, invoiceService, settingsService, dashboardService, auditService
 }

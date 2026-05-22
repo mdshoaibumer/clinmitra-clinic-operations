@@ -116,14 +116,14 @@ func TestPatientHandler_CreatePatient(t *testing.T) {
 		DoctorName:    "Dr. Test",
 		Phone:         "9876543210",
 		AdminUsername: "admin",
-		AdminPassword: "admin123",
+		AdminPassword: "Admin1234",
 		AdminFullName: "Admin User",
 	})
 	if err != nil {
 		t.Fatalf("setup error: %v", err)
 	}
 	// Login
-	_, err = authHandler.Login("admin", "admin123")
+	_, err = authHandler.Login("admin", "Admin1234")
 	if err != nil {
 		t.Fatalf("login error: %v", err)
 	}
@@ -160,9 +160,9 @@ func TestPatientHandler_GetPatient(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	patient, _ := patientHandler.CreatePatient(service.CreatePatientInput{
 		Name: "Find Me", Phone: "8765432100", Gender: "female",
@@ -189,9 +189,9 @@ func TestPatientHandler_ListPatients(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	patientHandler.CreatePatient(service.CreatePatientInput{Name: "Alice", Phone: "9876543211", Gender: "female"})
 	patientHandler.CreatePatient(service.CreatePatientInput{Name: "Bob", Phone: "9876543212", Gender: "male"})
@@ -228,9 +228,9 @@ func TestPatientHandler_UpdatePatient(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	patient, _ := patientHandler.CreatePatient(service.CreatePatientInput{
 		Name: "Original", Phone: "9876543211", Gender: "male",
@@ -252,9 +252,9 @@ func TestPatientHandler_DeletePatient(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	patient, _ := patientHandler.CreatePatient(service.CreatePatientInput{
 		Name: "Delete Me", Phone: "9876543211", Gender: "male",
@@ -277,9 +277,9 @@ func TestPatientHandler_CheckDuplicatePhone(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	patientHandler.CreatePatient(service.CreatePatientInput{
 		Name: "Existing", Phone: "9876543211", Gender: "male",
@@ -303,9 +303,9 @@ func TestPatientHandler_GetPatientCount(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	count, err := patientHandler.GetPatientCount()
 	if err != nil {
@@ -327,9 +327,9 @@ func TestAppointmentHandler_CreateAndGet(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	patient, _ := patientHandler.CreatePatient(service.CreatePatientInput{
 		Name: "Appt Patient", Phone: "9876543211", Gender: "male",
@@ -402,9 +402,9 @@ func TestAppointmentHandler_UpdateCancelComplete(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	patient, _ := patientHandler.CreatePatient(service.CreatePatientInput{
 		Name: "Patient", Phone: "9876543211", Gender: "male",
@@ -450,7 +450,7 @@ func TestAuthHandler_LoginLogout(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
 
 	// Login with wrong password
@@ -460,7 +460,7 @@ func TestAuthHandler_LoginLogout(t *testing.T) {
 	}
 
 	// Login correct
-	resp, err := authHandler.Login("admin", "admin123")
+	resp, err := authHandler.Login("admin", "Admin1234")
 	if err != nil {
 		t.Fatalf("Login error: %v", err)
 	}
@@ -478,7 +478,7 @@ func TestAuthHandler_LoginLogout(t *testing.T) {
 	}
 
 	// ChangePassword
-	err = authHandler.ChangePassword("admin123", "newpass123")
+	err = authHandler.ChangePassword("Admin1234", "NewPass1234")
 	if err != nil {
 		t.Fatalf("ChangePassword error: %v", err)
 	}
@@ -514,7 +514,7 @@ func TestSettingsHandler_Setup(t *testing.T) {
 	// Complete setup
 	err = settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "My Clinic", DoctorName: "Dr. Smith", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
 	if err != nil {
 		t.Fatalf("CompleteSetup error: %v", err)
@@ -540,9 +540,9 @@ func TestSettingsHandler_Treatments(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	// Create treatment
 	treatment, err := settingsHandler.CreateTreatment("Root Canal", "RCT", "Endodontics", "Root canal treatment", 500000)
@@ -595,9 +595,9 @@ func TestSettingsHandler_UpdateClinicSettings(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	settings, _ := settingsHandler.GetClinicSettings()
 	settings.ClinicName = "Updated Clinic"
@@ -619,9 +619,9 @@ func TestSettingsHandler_Logo(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	// Upload small logo (base64 of a tiny image)
 	err := settingsHandler.UploadLogo("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==")
@@ -641,9 +641,9 @@ func TestInvoiceHandler_CreateAndManage(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	patient, _ := patientHandler.CreatePatient(service.CreatePatientInput{
 		Name: "Invoice Patient", Phone: "9876543211", Gender: "male",
@@ -719,9 +719,9 @@ func TestInvoiceHandler_VoidInvoice(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	patient, _ := patientHandler.CreatePatient(service.CreatePatientInput{
 		Name: "Void Patient", Phone: "9876543211", Gender: "male",
@@ -748,9 +748,9 @@ func TestDashboardHandler_GetStats(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	stats, err := dashboardHandler.GetDashboardStats()
 	if err != nil {
@@ -766,9 +766,9 @@ func TestDashboardHandler_Reports(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	// Daily report
 	daily, err := dashboardHandler.GetDailyReport("2026-05-20")
@@ -796,9 +796,9 @@ func TestBackupHandler_ListBackups(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	// ListBackups should work even if empty
 	backups, err := backupHandler.ListBackups()
@@ -846,9 +846,9 @@ func TestBackupHandler_VerifyBackup_InvalidPath(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	_, err := backupHandler.VerifyBackup("/nonexistent/path.db")
 	if err == nil {
@@ -861,9 +861,9 @@ func TestBackupHandler_RestoreBackup_InvalidPath(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	err := backupHandler.RestoreFromBackup("/nonexistent/path.db")
 	if err == nil {
@@ -876,9 +876,9 @@ func TestBackupHandler_CreateCloudBackup_NotConfigured(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	// Cloud backup not configured, should return nil without error
 	result, err := backupHandler.CreateCloudBackup()
@@ -897,9 +897,9 @@ func TestPatientHandler_GetPatientHistory(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	// Create a treatment
 	treatment, err := settingsHandler.CreateTreatment("Filling", "FIL", "restorative", "Dental filling", 50000)
@@ -943,9 +943,9 @@ func TestAppointmentHandler_UpdateAppointment(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	patient, _ := patientHandler.CreatePatient(service.CreatePatientInput{
 		Name: "Test Patient", Phone: "9876543211", Gender: "male", Age: 30,
@@ -980,9 +980,9 @@ func TestAppointmentHandler_GetPatientAppointments(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	patient, _ := patientHandler.CreatePatient(service.CreatePatientInput{
 		Name: "Test Patient", Phone: "9876543211", Gender: "male", Age: 30,
@@ -1008,9 +1008,9 @@ func TestAppointmentHandler_GetAppointment(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	patient, _ := patientHandler.CreatePatient(service.CreatePatientInput{
 		Name: "Test Patient", Phone: "9876543211", Gender: "male", Age: 30,
@@ -1036,9 +1036,9 @@ func TestAppointmentHandler_GetAppointmentsByDate(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	patient, _ := patientHandler.CreatePatient(service.CreatePatientInput{
 		Name: "Test Patient", Phone: "9876543211", Gender: "male", Age: 30,
@@ -1064,9 +1064,9 @@ func TestAppointmentHandler_GetWeekAppointments(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	patient, _ := patientHandler.CreatePatient(service.CreatePatientInput{
 		Name: "Test Patient", Phone: "9876543211", Gender: "male", Age: 30,
@@ -1092,9 +1092,9 @@ func TestSettingsHandler_UpdateTreatment(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	treatment, err := settingsHandler.CreateTreatment("Filling", "FIL", "restorative", "Filling desc", 50000)
 	if err != nil {
@@ -1112,9 +1112,9 @@ func TestSettingsHandler_DeleteTreatment(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	treatment, err := settingsHandler.CreateTreatment("Extraction", "EX", "oral_surgery", "", 30000)
 	if err != nil {
@@ -1134,9 +1134,9 @@ func TestSettingsHandler_SaveAndRemoveLogo(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	// Save logo
 	err := settingsHandler.UploadLogo("data:image/png;base64,iVBORw0KGgo=")
@@ -1167,9 +1167,9 @@ func TestSettingsHandler_ListAllTreatments(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	settingsHandler.CreateTreatment("A", "A", "cat", "", 1000)
 	settingsHandler.CreateTreatment("B", "B", "cat", "", 2000)
@@ -1190,9 +1190,9 @@ func TestInvoiceHandler_GetPatientInvoicesAndOutstanding(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	treatment, _ := settingsHandler.CreateTreatment("Filling", "FIL", "restorative", "", 50000)
 
@@ -1234,9 +1234,9 @@ func TestAuthHandler_GetCurrentUser(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	user, err := authHandler.GetCurrentUser()
 	if err != nil {
@@ -1255,25 +1255,25 @@ func TestAuthHandler_ChangePassword(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	// Wrong current password
-	err := authHandler.ChangePassword("wrongpass", "newpass123")
+	err := authHandler.ChangePassword("wrongpass", "NewPass1234")
 	if err == nil {
 		t.Fatal("expected error with wrong current password")
 	}
 
 	// Correct change
-	err = authHandler.ChangePassword("admin123", "newpass123")
+	err = authHandler.ChangePassword("Admin1234", "NewPass1234")
 	if err != nil {
 		t.Fatalf("ChangePassword error: %v", err)
 	}
 
 	// Login with new password
 	authHandler.Logout()
-	_, err = authHandler.Login("admin", "newpass123")
+	_, err = authHandler.Login("admin", "NewPass1234")
 	if err != nil {
 		t.Fatalf("login with new password failed: %v", err)
 	}
@@ -1286,9 +1286,9 @@ func TestAuthHandler_Logout(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	err := authHandler.Logout()
 	if err != nil {
@@ -1312,9 +1312,9 @@ func TestDashboardHandler_StatsWithData(t *testing.T) {
 
 	settingsHandler.CompleteSetup(service.SetupInput{
 		ClinicName: "Test", DoctorName: "Dr", Phone: "9876543210",
-		AdminUsername: "admin", AdminPassword: "admin123", AdminFullName: "Admin",
+		AdminUsername: "admin", AdminPassword: "Admin1234", AdminFullName: "Admin",
 	})
-	authHandler.Login("admin", "admin123")
+	authHandler.Login("admin", "Admin1234")
 
 	treatment, _ := settingsHandler.CreateTreatment("Checkup", "CHK", "preventive", "", 30000)
 

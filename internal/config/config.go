@@ -30,7 +30,7 @@ func NewConfig() (*Config, error) {
 
 	cfg := &Config{
 		AppName:          "Clinmitra Dental",
-		Version:          "1.0.0",
+		Version:          "1.1.1",
 		DataDir:          dataDir,
 		DBPath:           filepath.Join(dataDir, "clinmitra.db"),
 		BackupDir:        filepath.Join(dataDir, "backups"),

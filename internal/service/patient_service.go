@@ -64,6 +64,10 @@ func NewPatientService(
 // CreatePatient validates input (name, phone, age) and persists a new
 // patient record inside a transaction. Logs the action to the audit trail.
 func (s *PatientService) CreatePatient(input CreatePatientInput) (*models.Patient, error) {
+	if err := s.authService.RequireAuth(); err != nil {
+		return nil, err
+	}
+
 	if err := utils.ValidateRequired("Name", input.Name); err != nil {
 		return nil, err
 	}
@@ -89,6 +93,38 @@ func (s *PatientService) CreatePatient(input CreatePatientInput) (*models.Patien
 		if err := utils.ValidateAge(input.Age); err != nil {
 			return nil, err
 		}
+	}
+
+	// Validate email if provided
+	if err := utils.ValidateEmail("Email", input.Email); err != nil {
+		return nil, err
+	}
+
+	// Validate gender if provided
+	if err := utils.ValidateEnum("Gender", input.Gender, []string{string(models.GenderMale), string(models.GenderFemale), string(models.GenderOther)}); err != nil {
+		return nil, err
+	}
+
+	// Validate date of birth format if provided
+	if err := utils.ValidateDate("Date of birth", input.DateOfBirth); err != nil {
+		return nil, err
+	}
+
+	// Enforce max lengths on free-text fields
+	if err := utils.ValidateMaxLength("Name", input.Name, 200); err != nil {
+		return nil, err
+	}
+	if err := utils.ValidateMaxLength("Address", input.Address, 500); err != nil {
+		return nil, err
+	}
+	if err := utils.ValidateMaxLength("Medical history", input.MedicalHistory, 5000); err != nil {
+		return nil, err
+	}
+	if err := utils.ValidateMaxLength("Allergies", input.Allergies, 2000); err != nil {
+		return nil, err
+	}
+	if err := utils.ValidateMaxLength("Notes", input.Notes, 5000); err != nil {
+		return nil, err
 	}
 
 	patient := &models.Patient{
@@ -126,6 +162,10 @@ func (s *PatientService) CreatePatient(input CreatePatientInput) (*models.Patien
 // UpdatePatient validates input and updates an existing patient record.
 // Records the old and new values in the audit trail.
 func (s *PatientService) UpdatePatient(id string, input CreatePatientInput) (*models.Patient, error) {
+	if err := s.authService.RequireAuth(); err != nil {
+		return nil, err
+	}
+
 	patient, err := s.patientRepo.FindByID(id)
 	if err != nil {
 		return nil, err
@@ -151,6 +191,23 @@ func (s *PatientService) UpdatePatient(id string, input CreatePatientInput) (*mo
 		}
 	}
 
+	// Enforce max lengths on free-text fields
+	if err := utils.ValidateMaxLength("Name", input.Name, 200); err != nil {
+		return nil, err
+	}
+	if err := utils.ValidateMaxLength("Address", input.Address, 500); err != nil {
+		return nil, err
+	}
+	if err := utils.ValidateMaxLength("Medical history", input.MedicalHistory, 5000); err != nil {
+		return nil, err
+	}
+	if err := utils.ValidateMaxLength("Allergies", input.Allergies, 2000); err != nil {
+		return nil, err
+	}
+	if err := utils.ValidateMaxLength("Notes", input.Notes, 5000); err != nil {
+		return nil, err
+	}
+
 	old := *patient
 	patient.Name = input.Name
 	patient.Phone = cleanedPhone
@@ -166,7 +223,7 @@ func (s *PatientService) UpdatePatient(id string, input CreatePatientInput) (*mo
 	patient.Notes = input.Notes
 
 	err = s.db.Transaction(func(tx *gorm.DB) error {
-		return tx.Model(patient).Updates(map[string]interface{}{
+		return tx.Model(patient).Updates(map[string]any{
 			"name":            patient.Name,
 			"phone":           patient.Phone,
 			"email":           patient.Email,
@@ -241,8 +298,13 @@ func (s *PatientService) DeletePatient(id string) error {
 		return utils.ValidationError("Cannot delete patient with unpaid invoices")
 	}
 
-	s.auditService.LogAction(s.authService.GetCurrentUserID(), models.AuditDelete, "patient", id, nil, nil)
-	return s.patientRepo.Delete(id)
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Delete(&models.Patient{}, "id = ?", id).Error; err != nil {
+			return err
+		}
+		return s.auditService.LogActionTx(tx, s.authService.GetCurrentUserID(), models.AuditDelete, "patient", id, nil, nil)
+	})
+	return err
 }
 
 // GetPatientHistory returns all treatment records for the given patient.

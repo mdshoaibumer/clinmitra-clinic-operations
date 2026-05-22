@@ -15,8 +15,8 @@ func TestNewConfig(t *testing.T) {
 	if cfg.AppName != "Clinmitra Dental" {
 		t.Errorf("AppName = %q, want 'Clinmitra Dental'", cfg.AppName)
 	}
-	if cfg.Version != "1.0.0" {
-		t.Errorf("Version = %q, want '1.0.0'", cfg.Version)
+	if cfg.Version != "1.1.1" {
+		t.Errorf("Version = %q, want '1.1.1'", cfg.Version)
 	}
 	if cfg.MaxLoginAttempts != 5 {
 		t.Errorf("MaxLoginAttempts = %d, want 5", cfg.MaxLoginAttempts)
