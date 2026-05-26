@@ -1,30 +1,35 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* ClinMitra Dental Design System — Medical Teal + Health Green */
+    --background: 166 76% 97%;
+    --foreground: 176 62% 18%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 176 62% 18%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 210 100% 45%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 210 100% 45%;
-    --radius: 0.5rem;
+    --popover-foreground: 176 62% 18%;
+    --primary: 189 91% 37%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 187 71% 53%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 166 30% 95%;
+    --muted-foreground: 176 20% 40%;
+    --accent: 142 71% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 176 20% 90%;
+    --input: 176 20% 90%;
+    --ring: 189 91% 37%;
+    --radius: 0.625rem;
+
+    /* Semantic tokens */
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --info: 189 91% 37%;
   }
 }
 
@@ -32,20 +37,70 @@
   * {
     @apply border-border;
   }
+
+  html {
+    /* GPU-accelerated scrolling */
+    scroll-behavior: smooth;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* Accessible focus states — 3px ring */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+    transition: box-shadow 150ms ease;
+  }
+
+  /* All clickable elements get pointer cursor */
+  button, a, [role="button"], [tabindex]:not([tabindex="-1"]),
+  input[type="submit"], input[type="button"], input[type="reset"],
+  select, label[for] {
+    cursor: pointer;
+  }
+
+  /* Respect reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Utility: smooth transitions on interactive elements */
+  .transition-base {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  /* Card hover effect */
+  .card-interactive {
+    @apply transition-all duration-200 ease-out hover:shadow-lg hover:-translate-y-0.5;
   }
 }
 
 @media print {
-  /* Force background colors to print */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Global Print Reset */
   html, body {
     margin: 0 !important;
     padding: 0 !important;
@@ -54,11 +109,10 @@
     background: white !important;
   }
 
-  /* Utility classes */
   .print\:hidden {
     display: none !important;
   }
-  
+
   .print\:block {
     display: block !important;
   }
@@ -67,12 +121,10 @@
     display: block !important;
   }
 
-  /* Sidebar and Navigation */
   aside, nav, header, footer:not(.print\:block), button:not(.print\:block) {
     display: none !important;
   }
 
-  /* Container adjustments */
   main, #root {
     margin: 0 !important;
     padding: 0 !important;
@@ -90,7 +142,6 @@
     margin: 0 !important;
   }
 
-  /* Specific fix for InvoicePrintView to have content margins since @page margin is 0 */
   .print-container {
     padding: 1cm !important;
   }
@@ -102,6 +153,15 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
 .animate-in {
-  animation: fade-in 0.5s ease-out forwards;
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
 }

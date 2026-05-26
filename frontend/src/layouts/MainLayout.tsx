@@ -83,16 +83,16 @@ export default function MainLayout() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "flex flex-col bg-white border-r transition-all duration-300 print:hidden",
+          "flex flex-col bg-white border-r border-border/60 shadow-sidebar transition-all duration-200 ease-out print:hidden",
           sidebarCollapsed ? "w-16" : "w-64"
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between p-4 border-b border-border/60">
           {!sidebarCollapsed && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <img src={toothLogo} alt="" className="h-7 w-7 object-contain" />
-              <h1 className="text-xl font-bold text-primary">Clinmitra</h1>
+              <h1 className="text-lg font-heading font-bold text-foreground">Clinmitra</h1>
             </div>
           )}
           {sidebarCollapsed && (
@@ -111,7 +111,7 @@ export default function MainLayout() {
                 const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true })
                 window.dispatchEvent(event)
               }}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground border rounded-md hover:bg-accent transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground border border-border/60 rounded-lg hover:bg-muted/50 transition-colors duration-150"
             >
               <Search className="h-3.5 w-3.5" />
               <span className="flex-1 text-left">Search...</span>
@@ -121,17 +121,17 @@ export default function MainLayout() {
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 p-2 space-y-1 mt-1 overflow-y-auto">
+        <nav className="flex-1 p-2 space-y-0.5 mt-2 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors relative",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 relative",
                   isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                    ? "bg-primary/10 text-primary shadow-sm"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                   sidebarCollapsed && "justify-center"
                 )
               }
@@ -158,10 +158,10 @@ export default function MainLayout() {
         </nav>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t space-y-2">
+        <div className="p-4 border-t border-border/60 space-y-2">
           {!sidebarCollapsed && (
             <div className="mb-4">
-              <p className="text-sm font-medium truncate">{user?.fullName}</p>
+              <p className="text-sm font-medium truncate text-foreground">{user?.fullName}</p>
               <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
             </div>
           )}
@@ -170,7 +170,7 @@ export default function MainLayout() {
             variant="outline"
             size={sidebarCollapsed ? "icon" : "sm"}
             onClick={handleBackup}
-            className={cn("w-full justify-start text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200", sidebarCollapsed && "justify-center")}
+            className={cn("w-full justify-start text-primary hover:text-primary hover:bg-primary/5 border-primary/20", sidebarCollapsed && "justify-center")}
             title="Backup Data"
           >
             <DatabaseBackup className="h-4 w-4" />
@@ -181,7 +181,7 @@ export default function MainLayout() {
             variant="ghost"
             size={sidebarCollapsed ? "icon" : "sm"}
             onClick={handleLogout}
-            className={cn("w-full justify-start", sidebarCollapsed && "justify-center")}
+            className={cn("w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/5", sidebarCollapsed && "justify-center")}
             title="Logout"
           >
             <LogOut className="h-4 w-4" />
@@ -191,7 +191,7 @@ export default function MainLayout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto bg-gray-50 print:overflow-visible print:bg-white print:m-0 print:p-0">
+      <main className="flex-1 overflow-auto bg-background print:overflow-visible print:bg-white print:m-0 print:p-0">
         <div className="p-6 print:p-0">
           <Outlet />
         </div>

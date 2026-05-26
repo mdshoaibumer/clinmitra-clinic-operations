@@ -16,7 +16,8 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Noto Sans', 'system-ui', 'sans-serif'],
+        heading: ['Figtree', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: 'hsl(var(--border))',
@@ -52,11 +53,30 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        // Semantic colors for healthcare
+        success: 'hsl(var(--success))',
+        warning: 'hsl(var(--warning))',
+        info: 'hsl(var(--info))',
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+      },
+      boxShadow: {
+        'soft': '0 2px 8px -2px rgba(0, 0, 0, 0.08), 0 4px 12px -4px rgba(0, 0, 0, 0.04)',
+        'card': '0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03)',
+        'card-hover': '0 4px 16px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.04)',
+        'sidebar': '2px 0 8px rgba(0, 0, 0, 0.04)',
+      },
+      keyframes: {
+        'slide-in': {
+          from: { opacity: '0', transform: 'translateY(4px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        'slide-in': 'slide-in 0.2s ease-out',
       },
     },
   },
